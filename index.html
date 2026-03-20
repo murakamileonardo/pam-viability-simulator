@@ -804,27 +804,140 @@ footer span { color: var(--accent-purple); font-weight: 600; }
 }
 .tutorial-nav-btn.skip:hover { color: var(--text-muted); }
 
+/* RESPONSIVE GRID CLASSES (replace inline styles) */
+.charts-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.stats-3col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-top: 20px; }
+.compare-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 16px; }
+
+/* NAV HAMBURGER */
+.nav-hamburger {
+  display: none; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border: none; background: none;
+  color: var(--text-primary); font-size: 22px; cursor: pointer;
+  margin-left: 8px; flex-shrink: 0;
+}
+.nav-top-actions {
+  display: none; /* shown on mobile only */
+}
+
+/* ===== MOBILE RESPONSIVE ===== */
+@media (max-width: 768px) {
+  /* Nav — hamburger */
+  nav { padding: 0 16px; position: relative; }
+  .nav-hamburger { display: flex; }
+  .nav-top-actions { display: flex; align-items: center; gap: 6px; margin-left: auto; }
+  .nav-links {
+    display: none; position: absolute; top: 56px; left: 0; right: 0;
+    flex-direction: column; background: var(--bg-surface);
+    border-bottom: 1px solid var(--border-default);
+    padding: 8px 0; gap: 0; z-index: 100;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+  }
+  .nav-links.open { display: flex; }
+  .nav-links li { width: 100%; }
+  .nav-links li a { padding: 14px 24px; display: block; width: 100%; }
+  .nav-links .nav-hide-mobile { display: none; }
+
+  /* Hero */
+  .hero { padding: 72px 0 28px; }
+  .hero h1 { font-size: 24px; }
+  .hero-sub { font-size: 14px; }
+
+  /* Container + sections */
+  .container { padding: 0 16px; }
+  section { padding: 28px 0; }
+  .section-header h2 { font-size: 22px; }
+  .section-header p { font-size: 13px; }
+
+  /* Infographic */
+  .infographic { padding: 24px 16px; }
+
+  /* Option config panels */
+  .opt-configs-grid { grid-template-columns: 1fr; }
+  .opt-config-row.cols-4 { grid-template-columns: repeat(2, 1fr); }
+  .opt-config-row.cols-8 { grid-template-columns: repeat(2, 1fr); }
+
+  /* Simulator */
+  .sim-panel { padding: 20px 16px; }
+  .sim-grid-2col { grid-template-columns: 1fr; gap: 16px; }
+  .sim-milestones-row { grid-template-columns: repeat(2, 1fr); }
+  .sim-text-input { width: 70px; font-size: 18px; }
+
+  /* Charts */
+  .chart-wrapper { height: 220px; }
+  .charts-2col { grid-template-columns: 1fr; }
+
+  /* KPIs */
+  .kpi-row { grid-template-columns: 1fr 1fr; gap: 12px; }
+  .kpi-value { font-size: 22px; }
+
+  /* Comparison table — scroll horizontal */
+  .table-scroll-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: var(--radius-lg); }
+  .comparison-table { min-width: 600px; }
+
+  /* Stats cards (3-col in tabs) */
+  .stats-3col { grid-template-columns: 1fr; }
+  .compare-2col { grid-template-columns: 1fr; }
+
+  /* Cenário grid */
+  .cenario-card { padding: 18px; }
+  .cenario-card h3 { font-size: 15px; }
+
+  /* Save panel */
+  .save-panel { padding: 20px 16px; }
+
+  /* Scenarios table */
+  .scenarios-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .scenarios-table { min-width: 520px; }
+
+  /* Tabs */
+  .tab-btn { padding: 8px 14px; font-size: 12px; }
+
+  /* Modal */
+  .modal { padding: 24px; }
+
+  /* Tutorial tooltip */
+  .tutorial-tooltip { padding: 18px; width: 320px; }
+}
+
+@media (max-width: 480px) {
+  .kpi-row { grid-template-columns: 1fr; gap: 10px; }
+  .kpi-card { padding: 16px 14px; }
+  .opt-config-row.cols-4 { grid-template-columns: 1fr; }
+  .opt-config-row.cols-8 { grid-template-columns: 1fr; }
+  .hero h1 { font-size: 20px; }
+  .sim-milestones-row { grid-template-columns: 1fr; }
+}
+
 </style>
 </head>
 <body>
 
 <nav>
   <div class="nav-brand"><span>PAM</span> <span data-i18n="navBrand">Viabilidade</span></div>
-  <ul class="nav-links">
-    <li><a href="#overview">Overview</a></li>
-    <li><a href="#simulador" data-i18n="navSimulator">Simulador</a></li>
-    <li><a href="#options">Options</a></li>
-    <li><a href="#projecao" data-i18n="navProjection">Projeção</a></li>
-    <li><a href="#salvos" data-i18n="navSaved">Salvos</a></li>
-    <li><a href="#comparar" data-i18n="navCompare">Comparar</a></li>
-    <li>
+  <ul class="nav-links" id="nav-links">
+    <li><a href="#overview" onclick="closeNav()">Overview</a></li>
+    <li><a href="#simulador" data-i18n="navSimulator" onclick="closeNav()">Simulador</a></li>
+    <li><a href="#options" onclick="closeNav()">Options</a></li>
+    <li><a href="#projecao" data-i18n="navProjection" onclick="closeNav()">Projeção</a></li>
+    <li><a href="#salvos" data-i18n="navSaved" onclick="closeNav()">Salvos</a></li>
+    <li><a href="#comparar" data-i18n="navCompare" onclick="closeNav()">Comparar</a></li>
+    <li class="nav-hide-mobile">
       <div class="lang-toggle" id="lang-toggle">
         <div class="lang-option" data-lang="br" onclick="setLang('br')">&#x1F1E7;&#x1F1F7; BR</div>
         <div class="lang-option" data-lang="en" onclick="setLang('en')">&#x1F1FA;&#x1F1F8; EN</div>
       </div>
     </li>
-    <li><button class="tutorial-start-btn" onclick="startTutorial()" title="Tutorial">?</button></li>
+    <li class="nav-hide-mobile"><button class="tutorial-start-btn" onclick="startTutorial()" title="Tutorial">?</button></li>
   </ul>
+  <div class="nav-top-actions">
+    <div class="lang-toggle" id="lang-toggle-mobile">
+      <div class="lang-option" data-lang="br" onclick="setLang('br')">&#x1F1E7;&#x1F1F7; BR</div>
+      <div class="lang-option" data-lang="en" onclick="setLang('en')">&#x1F1FA;&#x1F1F8; EN</div>
+    </div>
+    <button class="tutorial-start-btn" onclick="startTutorial()" title="Tutorial">?</button>
+  </div>
+  <button class="nav-hamburger" onclick="toggleNav()" aria-label="Menu">☰</button>
 </nav>
 
 <!-- HERO -->
@@ -1019,7 +1132,7 @@ footer span { color: var(--accent-purple); font-weight: 600; }
       <h3 data-i18n="chartGgrTitle">GGR Mensal (R$ Milhões)</h3>
       <div class="chart-wrapper"><canvas id="chartGGR"></canvas></div>
     </div>
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+    <div class="charts-2col">
       <div class="chart-container" style="margin-bottom:0;">
         <h3 data-i18n="chartFeeTitle">Fee Acumulado por Option</h3>
         <div class="chart-wrapper"><canvas id="chartFee"></canvas></div>
@@ -1075,6 +1188,7 @@ footer span { color: var(--accent-purple); font-weight: 600; }
 
     <!-- Tab: Comparativo -->
     <div class="tab-panel active" id="tab-comparativo">
+      <div class="table-scroll-wrap">
       <table class="comparison-table" id="tbl-comp">
         <thead>
           <tr>
@@ -1086,6 +1200,7 @@ footer span { color: var(--accent-purple); font-weight: 600; }
         </thead>
         <tbody id="tbl-body"></tbody>
       </table>
+      </div>
       <div style="margin-top:24px" id="progress-bars"></div>
     </div>
 
@@ -1152,7 +1267,7 @@ footer span { color: var(--accent-purple); font-weight: 600; }
       </div>
     </div>
 
-    <div id="scenarios-list"></div>
+    <div id="scenarios-list" class="scenarios-table-wrap"></div>
 
     <div style="margin-top:32px;" id="comparar">
       <div class="section-header">
@@ -2161,7 +2276,7 @@ function recalculate() {
     </div>`;
   }
 
-  $('progress-bars').innerHTML = `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-top:20px;">
+  $('progress-bars').innerHTML = `<div class="stats-3col">
     ${makeProgressCard('Option 1 — Waiver per Period', 'var(--accent-purple)', 'var(--gradient-cta)', T('progressWaiverUsed'),
       Math.min(c1_waiverUsed,P.waiver).toFixed(1), P.waiver, w1pct, fmtM(c1_totalFee), r1pct,
       `<div style="display:flex;justify-content:space-between;font-size:12px;padding-top:6px;border-top:1px solid var(--border-subtle);"><span style="color:var(--text-muted)">${T('progressAnnualCap')}</span><span style="font-family:var(--font-mono);font-weight:600;color:var(--accent-amber)">R$${c1_annualCap.toFixed(0)}M/${currentLang==='en'?'yr':'ano'}</span></div>`
@@ -2512,7 +2627,7 @@ function updateComparison() {
 
   // Charts
   let chartsHtml = `
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
+    <div class="charts-2col" style="margin-bottom:20px;">
       <div class="chart-container"><h3>${T('cmpChartGGR')}</h3><div class="chart-wrapper"><canvas id="cmpChartGGR"></canvas></div></div>
       <div class="chart-container"><h3>${T('cmpChartRadar')}</h3><div class="chart-wrapper"><canvas id="cmpChartRadar"></canvas></div></div>
     </div>
@@ -2525,7 +2640,7 @@ function updateComparison() {
   let conclusionHtml = `
     <div class="chart-container" style="border-top:3px solid var(--accent-green)">
       <h3>${T('cmpConclusionTitle')}</h3>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:16px;">
+      <div class="compare-2col">
         <div class="callout" style="border-left:3px solid var(--accent-green);">
           <p class="callout-title" style="color:var(--accent-green);">${T('cmpBestScenario')}: ${bestS.name}</p>
           <p class="callout-text">${T('cmpRevenueOpt1')}: <strong style="color:var(--text-primary)">${fmtM(bestS.summary.c1Fee)}</strong>, ${T('cmpAnnualCap')} R$${(bestS.params.waiver/4).toFixed(0)}M. ${bestS.rating >= 4 ? T('cmpHighRating').replace('{stars}', bestS.rating) : ''}</p>
@@ -2535,7 +2650,7 @@ function updateComparison() {
           <p class="callout-text">${T('cmpRevenueOpt1')}: <strong style="color:var(--text-primary)">${fmtM(worstS.summary.c1Fee)}</strong>, Waiver R$${worstS.params.waiver}M.</p>
         </div>
       </div>
-      <div style="margin-top:16px;">
+      <div class="table-scroll-wrap" style="margin-top:16px;">
         <table class="comparison-table"><thead><tr><th>${T('thMetric')}</th>${selected.map((s,i) => `<th style="border-bottom:2px solid ${COMPARE_COLORS[i%COMPARE_COLORS.length]}">${s.name}</th>`).join('')}</tr></thead><tbody>
           <tr><td>${T('cmpGgrInitial')}</td>${selected.map(s => `<td class="mono">R$${s.params.ggrIni}M</td>`).join('')}</tr>
           <tr><td>${T('cmpGgrGoalY1')}</td>${selected.map(s => `<td class="mono">R$${s.params.ggrMeta}M</td>`).join('')}</tr>
@@ -2591,6 +2706,14 @@ function updateComparison() {
       plugins: { legend: { labels: { usePointStyle: true, pointStyle: 'circle', padding: 12, font: { size: 11 } } } }
     }
   });
+}
+
+// ===== MOBILE NAV =====
+function toggleNav() {
+  document.getElementById('nav-links').classList.toggle('open');
+}
+function closeNav() {
+  document.getElementById('nav-links').classList.remove('open');
 }
 
 // ===== TUTORIAL WALKTHROUGH =====
