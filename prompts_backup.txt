@@ -127,3 +127,6 @@ Acho que pode ser um olhinho de ocultar, e em algum lugar um botão para mostrar
 
 [2026-03-20 — Prompt 20]
 nao era isso, eu quero que o proprio card também seja completamente ocultado. Troque o olho por algo mais monocromatico e sutil. crie um pequeno botao "Restaurar todas opções" apos ter algum oculto.
+
+[2026-03-20 — Prompt 21]
+ao ocultar a option, centralize os cards automaticamente no container.

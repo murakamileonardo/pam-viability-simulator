@@ -598,9 +598,12 @@ footer span { color: var(--accent-purple); font-weight: 600; }
   .info-arrow { width: auto; height: 30px; transform: rotate(90deg); }
 }
 .info-scenarios {
-  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-top: 24px;
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 16px; margin-top: 24px;
 }
-@media (max-width: 768px) { .info-scenarios { grid-template-columns: 1fr; } }
+.info-scenarios > .info-scenario-card {
+  flex: 1 1 280px; max-width: 380px; min-width: 0;
+}
+@media (max-width: 768px) { .info-scenarios > .info-scenario-card { flex: 1 1 100%; max-width: 100%; } }
 .info-scenario-card {
   border: 1px solid var(--border-subtle); border-radius: var(--radius-md);
   padding: 18px; background: var(--bg-elevated); position: relative; overflow: hidden;
