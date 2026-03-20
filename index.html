@@ -1,0 +1,2496 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title id="page-title">Viabilidade PAM — Simulador de Migração</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg-primary: #0A0A0F;
+  --bg-surface: #141419;
+  --bg-elevated: #1E1E26;
+  --bg-muted: #32373C;
+  --text-primary: #FFFFFF;
+  --text-secondary: #E0E0E6;
+  --text-muted: #8A8F98;
+  --text-disabled: #69727D;
+  --accent-purple: #9B51E0;
+  --accent-blue: #0693E3;
+  --accent-green: #00D084;
+  --accent-red: #CF2E2E;
+  --accent-amber: #FCB900;
+  --accent-orange: #FF6900;
+  --gradient-cta: linear-gradient(135deg, #9B51E0, #0693E3);
+  --gradient-midnight: linear-gradient(180deg, #020381, #2874FC);
+  --gradient-fire: linear-gradient(135deg, #FCB900, #FF6900);
+  --gradient-neon: linear-gradient(135deg, #00D084, #0693E3);
+  --border-subtle: rgba(255,255,255,0.06);
+  --border-default: rgba(255,255,255,0.1);
+  --border-hover: rgba(255,255,255,0.15);
+  --shadow-md: 0 4px 20px rgba(0,0,0,0.3);
+  --shadow-glow: 0 4px 15px rgba(155,81,224,0.3);
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-pill: 9999px;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--font-sans);
+  background: var(--bg-primary);
+  color: var(--text-secondary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* NAV */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(10,10,15,0.85);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 0 40px; height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-brand { font-size: 18px; font-weight: 700; color: var(--text-primary); }
+.nav-brand span { background: var(--gradient-cta); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.nav-links { display: flex; gap: 28px; list-style: none; }
+.nav-links a { color: var(--text-muted); text-decoration: none; font-size: 13px; font-weight: 500; transition: color 0.3s; }
+.nav-links a:hover { color: var(--text-primary); }
+
+/* LAYOUT */
+.container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+section { padding: 40px 0; }
+
+/* HERO */
+.hero {
+  padding: 100px 0 48px;
+  text-align: center;
+  position: relative; overflow: hidden;
+}
+.hero::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  background: var(--gradient-midnight); opacity: 0.12;
+}
+.hero-content { position: relative; z-index: 1; }
+.hero-overline {
+  color: var(--accent-amber);
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 0.15em; text-transform: uppercase;
+  margin-bottom: 14px;
+}
+.hero h1 {
+  color: var(--text-primary);
+  font-size: clamp(32px, 4.5vw, 48px);
+  font-weight: 800; letter-spacing: -0.03em; line-height: 1.1;
+  margin-bottom: 14px;
+}
+.hero h1 em {
+  font-style: normal;
+  background: var(--gradient-cta); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.hero-sub { font-size: 16px; color: var(--text-muted); max-width: 550px; margin: 0 auto; }
+
+/* KPIs */
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-top: 24px;
+}
+@media (max-width: 900px) { .kpi-row { grid-template-columns: repeat(2, 1fr); } }
+.kpi-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 20px 18px;
+  text-align: center;
+  transition: all 0.3s ease;
+  box-shadow: var(--shadow-md);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.kpi-card:hover { border-color: rgba(155,81,224,0.25); transform: translateY(-2px); }
+.kpi-label {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.1em; color: var(--text-muted); margin-bottom: 6px;
+}
+.kpi-value {
+  font-family: var(--font-mono); font-size: 26px; font-weight: 600;
+  color: var(--text-primary); line-height: 1.1;
+}
+.kpi-value.green { color: var(--accent-green); }
+.kpi-value.purple { color: var(--accent-purple); }
+.kpi-value.blue { color: var(--accent-blue); }
+.kpi-value.amber { color: var(--accent-amber); }
+.kpi-sub { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+
+/* SECTION HEADERS */
+.section-header { margin-bottom: 24px; }
+.section-header .overline {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.15em; color: var(--accent-purple); margin-bottom: 8px;
+}
+.section-header h2 {
+  font-size: 28px; font-weight: 700; color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+.section-header p { font-size: 14px; color: var(--text-muted); margin-top: 6px; }
+
+/* SIMULATOR PANEL */
+.sim-panel {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  box-shadow: var(--shadow-md);
+}
+.sim-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px;
+}
+.sim-input-group { display: flex; flex-direction: column; gap: 6px; }
+.sim-label {
+  display: flex; justify-content: space-between; align-items: baseline;
+  font-size: 12px; font-weight: 600; color: var(--text-muted);
+}
+.sim-val {
+  font-family: var(--font-mono); font-size: 14px; font-weight: 600;
+  color: var(--accent-purple);
+}
+.sim-slider {
+  -webkit-appearance: none; appearance: none;
+  width: 100%; height: 6px;
+  background: transparent;
+  border-radius: 999px; outline: none;
+  cursor: pointer;
+  position: relative;
+}
+.sim-slider::-webkit-slider-runnable-track {
+  height: 6px; border-radius: 999px;
+  background: linear-gradient(90deg, rgba(155,81,224,0.3), rgba(6,147,227,0.2));
+}
+.sim-slider::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--gradient-cta);
+  border: 2px solid var(--bg-primary);
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(155,81,224,0.5);
+  margin-top: -6px;
+  transition: box-shadow 0.2s, transform 0.15s;
+}
+.sim-slider::-webkit-slider-thumb:hover {
+  box-shadow: 0 2px 16px rgba(155,81,224,0.7);
+  transform: scale(1.15);
+}
+.sim-slider::-moz-range-track {
+  height: 6px; border-radius: 999px;
+  background: linear-gradient(90deg, rgba(155,81,224,0.3), rgba(6,147,227,0.2));
+}
+.sim-slider::-moz-range-thumb {
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--accent-purple);
+  border: 2px solid var(--bg-primary);
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(155,81,224,0.5);
+}
+.sim-range-labels {
+  display: flex; justify-content: space-between;
+  font-size: 10px; color: var(--text-disabled); font-family: var(--font-mono);
+}
+
+/* 2-column layout */
+.sim-grid-2col {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 32px;
+}
+.sim-col { display: flex; flex-direction: column; gap: 18px; }
+
+/* Growth group — vertical stacked */
+.sim-growth-group {
+  background: var(--bg-elevated); border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md); padding: 18px 20px 12px;
+  gap: 12px;
+}
+.sim-growth-title {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.1em; color: var(--accent-blue); margin-bottom: 2px;
+}
+.sim-growth-group .sim-input-group { gap: 4px; }
+.sim-growth-group .sim-range-labels { margin-top: 4px; }
+
+/* Milestones group */
+.sim-milestones-group {
+  background: var(--bg-elevated); border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md); padding: 18px 20px 14px;
+  margin-top: 20px;
+}
+.sim-milestones-row {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 10px;
+}
+.sim-milestone-input {
+  display: flex; flex-direction: column; gap: 4px;
+}
+.sim-milestone-input label {
+  font-size: 10px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em;
+}
+.sim-milestone-input input {
+  background: var(--bg-primary); border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm); padding: 8px 10px;
+  font-family: var(--font-mono); font-size: 14px; font-weight: 600;
+  color: var(--accent-orange); text-align: center;
+  outline: none; width: 100%;
+  -moz-appearance: textfield;
+  transition: border-color 0.2s;
+}
+.sim-milestone-input input:focus { border-color: var(--accent-orange); box-shadow: 0 0 8px rgba(255,105,0,0.15); }
+.sim-milestone-input input::-webkit-inner-spin-button,
+.sim-milestone-input input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+
+/* Waiver text input row */
+.sim-waiver-row {
+  margin-bottom: 24px; padding-bottom: 20px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.sim-waiver-input-group { display: flex; align-items: center; gap: 16px; }
+.sim-waiver-input-group .sim-label { margin: 0; font-size: 13px; font-weight: 600; }
+.sim-text-input-wrap {
+  display: flex; align-items: center; gap: 0;
+  background: var(--bg-elevated); border: 2px solid var(--border-default);
+  border-radius: var(--radius-md); padding: 0 12px;
+  transition: border-color 0.2s;
+}
+.sim-text-input-wrap:focus-within { border-color: var(--accent-amber); box-shadow: 0 0 12px rgba(252,185,0,0.15); }
+.sim-text-prefix, .sim-text-suffix {
+  font-family: var(--font-mono); font-size: 14px; font-weight: 600;
+  color: var(--accent-amber); user-select: none;
+}
+.sim-text-input {
+  background: transparent; border: none; outline: none;
+  font-family: var(--font-mono); font-size: 20px; font-weight: 700;
+  color: var(--text-primary); width: 80px; text-align: center;
+  padding: 8px 4px;
+  -moz-appearance: textfield;
+}
+.sim-text-input::-webkit-inner-spin-button,
+.sim-text-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+
+/* TABS */
+.tabs { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+.tab-btn {
+  background: var(--bg-elevated); color: var(--text-muted);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  padding: 8px 20px;
+  font-family: var(--font-sans); font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: all 0.3s;
+}
+.tab-btn:hover { border-color: var(--border-hover); color: var(--text-secondary); }
+.tab-btn.active { background: var(--gradient-cta); color: #fff; border-color: transparent; box-shadow: var(--shadow-glow); }
+.tab-panel { display: none; animation: fadeIn 0.35s ease; }
+.tab-panel.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+/* CENARIO */
+.cenario-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+@media (max-width: 768px) { .cenario-grid { grid-template-columns: 1fr; } }
+.cenario-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  box-shadow: var(--shadow-md);
+}
+.cenario-card h3 { font-size: 18px; font-weight: 600; color: var(--text-primary); margin-bottom: 16px; }
+.cenario-stat {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 0; border-bottom: 1px solid var(--border-subtle);
+}
+.cenario-stat:last-child { border-bottom: none; }
+.cenario-stat-label { font-size: 13px; color: var(--text-muted); }
+.cenario-stat-value { font-family: var(--font-mono); font-size: 14px; font-weight: 600; color: var(--text-primary); }
+
+/* TABLE */
+.comparison-table {
+  width: 100%; border-collapse: separate; border-spacing: 0;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg); overflow: hidden;
+}
+.comparison-table th {
+  background: var(--bg-elevated); color: var(--text-muted);
+  font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.1em;
+  padding: 12px 16px; text-align: left;
+}
+.comparison-table td {
+  padding: 10px 16px; font-size: 13px;
+  border-top: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+}
+.comparison-table td:first-child { font-weight: 500; color: var(--text-primary); }
+.comparison-table .mono { font-family: var(--font-mono); font-weight: 600; }
+.comparison-table .highlight { background: rgba(155,81,224,0.06); }
+
+/* PROGRESS BAR */
+.progress-bar-container { margin: 16px 0; }
+.progress-label {
+  display: flex; justify-content: space-between;
+  font-size: 12px; margin-bottom: 6px;
+}
+.progress-label span:first-child { color: var(--text-muted); }
+.progress-label span:last-child { font-family: var(--font-mono); color: var(--text-primary); font-weight: 600; }
+.progress-track { height: 6px; background: var(--bg-elevated); border-radius: 3px; overflow: hidden; }
+.progress-fill { height: 100%; border-radius: 3px; transition: width 0.8s ease; }
+.progress-fill.purple { background: var(--gradient-cta); }
+.progress-fill.green { background: var(--gradient-neon); }
+.progress-fill.amber { background: var(--gradient-fire); }
+
+/* CHARTS */
+.chart-container {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  box-shadow: var(--shadow-md);
+  margin-bottom: 20px;
+}
+.chart-container h3 { font-size: 16px; font-weight: 600; color: var(--text-primary); margin-bottom: 16px; }
+.chart-wrapper { position: relative; height: 300px; }
+
+/* BADGES */
+.badge {
+  display: inline-block; padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.05em;
+}
+.badge.green { background: rgba(0,208,132,0.15); color: var(--accent-green); }
+.badge.amber { background: rgba(252,185,0,0.15); color: var(--accent-amber); }
+.badge.red { background: rgba(207,46,46,0.15); color: var(--accent-red); }
+.badge.purple { background: rgba(155,81,224,0.15); color: var(--accent-purple); }
+.badge.blue { background: rgba(6,147,227,0.15); color: var(--accent-blue); }
+.badge.orange { background: rgba(255,105,0,0.15); color: var(--accent-orange); }
+
+/* DIVIDER */
+.divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border-default), transparent);
+  margin: 32px 0;
+}
+
+/* FOOTER */
+footer {
+  border-top: 1px solid var(--border-subtle);
+  padding: 32px 0; text-align: center;
+  color: var(--text-disabled); font-size: 12px;
+}
+footer span { color: var(--accent-purple); font-weight: 600; }
+
+/* CALLOUT */
+.callout {
+  padding: 14px 16px; background: var(--bg-elevated);
+  border-radius: var(--radius-md); margin-top: 12px;
+}
+.callout-title { font-size: 12px; font-weight: 600; margin-bottom: 3px; }
+.callout-text { font-size: 12px; color: var(--text-muted); }
+
+/* SAVE SCENARIO PANEL */
+.save-panel {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 24px; margin-top: 20px;
+  box-shadow: var(--shadow-md);
+}
+.save-panel h3 { font-size: 16px; font-weight: 600; color: var(--text-primary); margin-bottom: 16px; }
+.save-form { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 14px; align-items: end; }
+@media (max-width: 768px) { .save-form { grid-template-columns: 1fr; } }
+.form-group { display: flex; flex-direction: column; gap: 5px; }
+.form-group label {
+  font-size: 11px; font-weight: 600; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.08em;
+}
+.form-input {
+  background: var(--bg-elevated); color: var(--text-secondary);
+  border: 1px solid var(--border-default); border-radius: var(--radius-md);
+  padding: 10px 14px; font-family: var(--font-sans); font-size: 13px;
+  outline: none; transition: border-color 0.3s;
+}
+.form-input:focus { border-color: var(--accent-purple); box-shadow: 0 0 0 3px rgba(155,81,224,0.12); }
+.form-input::placeholder { color: var(--text-disabled); }
+
+/* STAR RATING */
+.star-rating { display: flex; gap: 4px; flex-direction: row-reverse; justify-content: flex-end; }
+.star-rating input { display: none; }
+.star-rating label {
+  font-size: 22px; cursor: pointer; color: var(--bg-muted);
+  transition: color 0.2s; line-height: 1;
+}
+.star-rating label:hover,
+.star-rating label:hover ~ label,
+.star-rating input:checked ~ label { color: var(--accent-amber); }
+
+/* BUTTONS */
+.btn-primary {
+  background: var(--gradient-cta); color: #fff; border: none;
+  border-radius: var(--radius-pill); padding: 10px 28px;
+  font-family: var(--font-sans); font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: all 0.3s;
+  box-shadow: var(--shadow-glow); white-space: nowrap;
+}
+.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 25px rgba(155,81,224,0.5); }
+.btn-sm {
+  padding: 6px 14px; font-size: 11px; border-radius: var(--radius-pill);
+  border: none; cursor: pointer; font-family: var(--font-sans); font-weight: 600;
+  transition: all 0.2s;
+}
+.btn-load { background: rgba(6,147,227,0.15); color: var(--accent-blue); }
+.btn-load:hover { background: rgba(6,147,227,0.3); }
+.btn-delete { background: rgba(207,46,46,0.15); color: var(--accent-red); }
+.btn-delete:hover { background: rgba(207,46,46,0.3); }
+.btn-compare { background: rgba(155,81,224,0.15); color: var(--accent-purple); }
+.btn-compare:hover { background: rgba(155,81,224,0.3); }
+
+/* SCENARIOS TABLE */
+.scenarios-table {
+  width: 100%; border-collapse: separate; border-spacing: 0;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg); overflow: hidden;
+}
+.scenarios-table th {
+  background: var(--bg-elevated); color: var(--text-muted);
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.08em; padding: 10px 14px; text-align: left;
+}
+.scenarios-table td {
+  padding: 10px 14px; font-size: 12px;
+  border-top: 1px solid var(--border-subtle);
+  color: var(--text-secondary); vertical-align: middle;
+}
+.scenarios-table tr:hover td { background: rgba(155,81,224,0.03); }
+.scenarios-table .mono { font-family: var(--font-mono); font-weight: 600; font-size: 12px; }
+.stars-display { color: var(--accent-amber); font-size: 14px; letter-spacing: 1px; }
+.empty-state {
+  text-align: center; padding: 40px 20px; color: var(--text-disabled); font-size: 13px;
+}
+.scenario-actions { display: flex; gap: 6px; }
+.cb-compare { accent-color: var(--accent-purple); width: 14px; height: 14px; cursor: pointer; }
+
+/* MODAL */
+.modal-overlay {
+  display: none; position: fixed; inset: 0; z-index: 999;
+  background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
+  align-items: center; justify-content: center;
+}
+.modal-overlay.active { display: flex; }
+.modal {
+  background: var(--bg-surface); border: 1px solid var(--border-default);
+  border-radius: var(--radius-xl); padding: 32px;
+  max-width: 420px; width: 90%;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  animation: fadeIn 0.25s ease;
+}
+.modal h3 { font-size: 18px; font-weight: 700; color: var(--text-primary); margin-bottom: 12px; }
+.modal p { font-size: 14px; color: var(--text-muted); margin-bottom: 24px; line-height: 1.6; }
+.modal-actions { display: flex; gap: 12px; justify-content: flex-end; }
+.btn-cancel {
+  background: var(--bg-elevated); color: var(--text-muted); border: 1px solid var(--border-default);
+  border-radius: var(--radius-pill); padding: 10px 24px;
+  font-family: var(--font-sans); font-size: 13px; font-weight: 600; cursor: pointer;
+}
+.btn-danger {
+  background: rgba(207,46,46,0.9); color: #fff; border: none;
+  border-radius: var(--radius-pill); padding: 10px 24px;
+  font-family: var(--font-sans); font-size: 13px; font-weight: 600; cursor: pointer;
+}
+.btn-danger:hover { background: var(--accent-red); }
+
+/* COMPARISON SECTION */
+.compare-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 20px; flex-wrap: wrap; gap: 12px;
+}
+.compare-legend { display: flex; gap: 16px; flex-wrap: wrap; }
+.compare-legend-item {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12px; color: var(--text-muted);
+}
+.compare-legend-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+.compare-cards {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px; margin-bottom: 24px;
+}
+.compare-mini-card {
+  background: var(--bg-surface); border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md); padding: 16px;
+  border-top: 3px solid var(--accent-purple);
+}
+.compare-mini-card h4 {
+  font-size: 13px; font-weight: 600; color: var(--text-primary);
+  margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.compare-mini-stat {
+  display: flex; justify-content: space-between;
+  font-size: 11px; padding: 3px 0; color: var(--text-muted);
+}
+.compare-mini-stat span:last-child {
+  font-family: var(--font-mono); font-weight: 600; color: var(--text-secondary);
+}
+
+/* INFOGRAPHIC */
+.infographic {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 32px 28px;
+  box-shadow: var(--shadow-md);
+}
+.info-flow {
+  display: flex; align-items: stretch; gap: 0;
+  position: relative;
+}
+@media (max-width: 900px) { .info-flow { flex-direction: column; } }
+.info-node {
+  flex: 1; text-align: center; padding: 20px 16px;
+  position: relative; display: flex; flex-direction: column; align-items: center; gap: 10px;
+  justify-content: flex-start; min-height: 200px;
+}
+.info-icon {
+  width: 56px; height: 56px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px; flex-shrink: 0;
+}
+.info-icon.purple { background: rgba(155,81,224,0.15); border: 2px solid rgba(155,81,224,0.4); }
+.info-icon.blue { background: rgba(6,147,227,0.15); border: 2px solid rgba(6,147,227,0.4); }
+.info-icon.green { background: rgba(0,208,132,0.15); border: 2px solid rgba(0,208,132,0.4); }
+.info-icon.amber { background: rgba(252,185,0,0.15); border: 2px solid rgba(252,185,0,0.4); }
+.info-icon.orange { background: rgba(255,105,0,0.15); border: 2px solid rgba(255,105,0,0.4); }
+.info-node-title {
+  font-size: 13px; font-weight: 700; color: var(--text-primary);
+  text-transform: uppercase; letter-spacing: 0.06em;
+}
+.info-node-desc {
+  font-size: 12px; color: var(--text-muted); line-height: 1.5;
+  flex: 1; padding: 0 4px;
+}
+.info-node-value {
+  font-family: var(--font-mono); font-size: 15px; font-weight: 700;
+}
+.info-arrow {
+  display: flex; align-items: center; justify-content: center;
+  width: 40px; flex-shrink: 0; color: var(--text-disabled); font-size: 20px;
+}
+@media (max-width: 900px) {
+  .info-arrow { width: auto; height: 30px; transform: rotate(90deg); }
+}
+.info-scenarios {
+  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-top: 24px;
+}
+@media (max-width: 768px) { .info-scenarios { grid-template-columns: 1fr; } }
+.info-scenario-card {
+  border: 1px solid var(--border-subtle); border-radius: var(--radius-md);
+  padding: 18px; background: var(--bg-elevated); position: relative; overflow: hidden;
+  display: flex; flex-direction: column;
+}
+.info-scenario-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+}
+.info-scenario-card.opt1::before { background: var(--gradient-cta); }
+.info-scenario-card.opt2::before { background: var(--gradient-fire); }
+.info-scenario-card.opt3::before { background: linear-gradient(135deg, #FF6900, #CF2E2E); }
+.info-scenario-tag {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.1em; margin-bottom: 6px;
+}
+.info-scenario-card.opt1 .info-scenario-tag { color: var(--accent-purple); }
+.info-scenario-card.opt2 .info-scenario-tag { color: var(--accent-amber); }
+.info-scenario-card.opt3 .info-scenario-tag { color: var(--accent-orange); }
+.info-scenario-title { font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 6px; }
+.info-scenario-desc { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+.info-scenario-visual {
+  display: flex; gap: 4px; margin-top: auto; padding-top: 10px; height: 24px; align-items: flex-end;
+}
+.info-bar {
+  flex: 1; border-radius: 2px; min-width: 0; transition: height 0.3s;
+}
+.info-label-row {
+  display: flex; justify-content: space-between; margin-top: 4px;
+  font-size: 9px; color: var(--text-disabled); font-family: var(--font-mono);
+}
+
+/* OPTION CARD COLORS for tabs */
+.option-progress-card {
+  background: var(--bg-elevated); border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md); padding: 18px; position: relative; overflow: hidden;
+}
+.option-progress-card .top-bar {
+  position: absolute; top: 0; left: 0; right: 0; height: 3px;
+}
+
+/* COLLAPSIBLE OPTION CONFIG */
+.opt-config-panel {
+  background: var(--bg-elevated); border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md); overflow: hidden;
+  transition: all 0.3s ease;
+}
+.opt-config-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 14px 18px; cursor: pointer; user-select: none;
+  transition: background 0.2s;
+}
+.opt-config-header:hover { background: rgba(255,255,255,0.02); }
+.opt-config-title {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+.opt-config-toggle {
+  font-size: 14px; color: var(--text-muted); transition: transform 0.3s;
+  width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;
+}
+.opt-config-panel.open .opt-config-toggle { transform: rotate(180deg); }
+.opt-config-body {
+  max-height: 0; overflow: hidden; transition: max-height 0.35s ease, padding 0.35s ease;
+  padding: 0 18px;
+}
+.opt-config-panel.open .opt-config-body {
+  max-height: 400px; padding: 0 18px 16px;
+}
+.opt-config-row {
+  display: grid; gap: 10px; margin-top: 8px;
+}
+.opt-config-row.cols-4 { grid-template-columns: repeat(4, 1fr); }
+.opt-config-row.cols-8 { grid-template-columns: repeat(4, 1fr); }
+.opt-config-item {
+  display: flex; flex-direction: column; gap: 3px;
+}
+.opt-config-item label {
+  font-size: 9px; font-weight: 600; color: var(--text-disabled);
+  text-transform: uppercase; letter-spacing: 0.06em;
+}
+.opt-config-item input {
+  background: var(--bg-primary); border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm); padding: 6px 8px;
+  font-family: var(--font-mono); font-size: 13px; font-weight: 600;
+  color: var(--text-primary); text-align: center;
+  outline: none; width: 100%;
+  -moz-appearance: textfield; transition: border-color 0.2s;
+}
+.opt-config-item input:focus { border-color: var(--accent-purple); box-shadow: 0 0 6px rgba(155,81,224,0.15); }
+.opt-config-item input::-webkit-inner-spin-button,
+.opt-config-item input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.opt-config-item.opt1 input:focus { border-color: var(--accent-purple); }
+.opt-config-item.opt2 input:focus { border-color: var(--accent-blue); }
+.opt-config-item.opt3 input:focus { border-color: var(--accent-orange); }
+.opt-configs-grid {
+  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-top: 20px;
+  align-items: start;
+}
+/* LANGUAGE TOGGLE */
+.lang-toggle {
+  display: flex; align-items: center; gap: 0;
+  background: var(--bg-elevated); border: 1px solid var(--border-default);
+  border-radius: var(--radius-pill); overflow: hidden; margin-left: 16px;
+  cursor: pointer; user-select: none; flex-shrink: 0;
+}
+.lang-option {
+  display: flex; align-items: center; gap: 5px;
+  padding: 5px 12px; font-size: 11px; font-weight: 600;
+  color: var(--text-muted); transition: all 0.25s; white-space: nowrap;
+}
+.lang-option.active {
+  background: var(--gradient-cta); color: #fff;
+}
+.lang-option:hover:not(.active) { color: var(--text-secondary); background: rgba(255,255,255,0.04); }
+
+/* Toast notification */
+.toast {
+  position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%) translateY(100px);
+  background: var(--bg-elevated); border: 1px solid var(--border-default);
+  border-radius: var(--radius-pill); padding: 12px 28px;
+  font-size: 13px; font-weight: 600; color: var(--text-primary);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+  z-index: 1000; opacity: 0; transition: transform 0.4s ease, opacity 0.4s ease;
+  pointer-events: none;
+}
+.toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand"><span>PAM</span> <span data-i18n="navBrand">Viabilidade</span></div>
+  <ul class="nav-links">
+    <li><a href="#overview">Overview</a></li>
+    <li><a href="#simulador" data-i18n="navSimulator">Simulador</a></li>
+    <li><a href="#options">Options</a></li>
+    <li><a href="#projecao" data-i18n="navProjection">Projeção</a></li>
+    <li><a href="#salvos" data-i18n="navSaved">Salvos</a></li>
+    <li><a href="#comparar" data-i18n="navCompare">Comparar</a></li>
+    <li>
+      <div class="lang-toggle" id="lang-toggle">
+        <div class="lang-option" data-lang="br" onclick="setLang('br')">&#x1F1E7;&#x1F1F7; BR</div>
+        <div class="lang-option" data-lang="en" onclick="setLang('en')">&#x1F1FA;&#x1F1F8; EN</div>
+      </div>
+    </li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section class="hero" id="overview">
+  <div class="container hero-content">
+    <p class="hero-overline" data-i18n="heroOverline">Análise de Viabilidade &bull; Licença Federal Brasil</p>
+    <h1 data-i18n-html="heroTitle">Migração de <em>Plataforma PAM</em><br>Simulador Comercial</h1>
+    <p class="hero-sub" data-i18n="heroSub">Ajuste os parâmetros e veja o impacto em tempo real nos 3 modelos de negociação.</p>
+  </div>
+</section>
+
+<!-- INFOGRAFICO -->
+<section id="como-funciona" style="padding-bottom:16px;">
+  <div class="container">
+    <div class="section-header" style="text-align:center;">
+      <p class="overline" data-i18n="infoOverline">Por que este deal faz sentido</p>
+      <h2 data-i18n="infoTitle">A Lógica do Incentivo</h2>
+      <p data-i18n="infoSub">4 pilares que sustentam a proposta de migração com waiver</p>
+    </div>
+    <div class="infographic">
+      <!-- FLOW: Narrativa de Convencimento -->
+      <div class="info-flow">
+        <div class="info-node">
+          <div class="info-icon purple">&#x1F3C6;</div>
+          <div class="info-node-title">Track Record</div>
+          <div class="info-node-desc" data-i18n-html="pillarTrackDesc">Grupo operador com <strong style="color:var(--accent-purple)">histórico comprovado</strong> — R$1.7Bi em depósitos em 2025. Licença federal ativa.</div>
+          <div class="info-node-value" style="color:var(--accent-purple)">R$1.7Bi</div>
+        </div>
+        <div class="info-arrow">&#x279C;</div>
+        <div class="info-node">
+          <div class="info-icon amber">&#x1F4A1;</div>
+          <div class="info-node-title" data-i18n="pillarIncentiveTitle">Incentivo</div>
+          <div class="info-node-desc" data-i18n-html="pillarIncentiveDesc"><strong style="color:var(--accent-amber)">KPIs claros</strong> liberam desconto da plataforma. Zero risco: waiver condicionado a performance real.</div>
+          <div class="info-node-value" style="color:var(--accent-amber)" data-i18n="pillarIncentiveValue">Zero risco</div>
+        </div>
+        <div class="info-arrow">&#x279C;</div>
+        <div class="info-node">
+          <div class="info-icon blue">&#x1F504;</div>
+          <div class="info-node-title" data-i18n="pillarMigrationTitle">Migração</div>
+          <div class="info-node-desc" data-i18n-html="pillarMigrationDesc">Nova plataforma PAM para escalar. <strong style="color:var(--accent-blue)">GGR cresce gradualmente</strong> — limitado pelo fluxo de caixa da transição.</div>
+          <div class="info-node-value" style="color:var(--accent-blue)" data-i18n="pillarMigrationValue">Cash-flow limitado</div>
+        </div>
+        <div class="info-arrow">&#x279C;</div>
+        <div class="info-node">
+          <div class="info-icon green">&#x1F680;</div>
+          <div class="info-node-title">Win-Win</div>
+          <div class="info-node-desc" data-i18n-html="pillarWinDesc">Com incentivo, <strong style="color:var(--accent-green)">operação cresce mais rápido</strong>. Plataforma lucra mais com volume maior. Todos ganham.</div>
+          <div class="info-node-value" style="color:var(--accent-green)" data-i18n="pillarWinValue">Todos lucram +</div>
+        </div>
+      </div>
+
+      <!-- 3 OPTIONS -->
+      <div class="info-scenarios" id="info-options-cards">
+        <!-- Populated dynamically -->
+      </div>
+
+      <!-- Option configs: collapsible panels -->
+      <div class="opt-configs-grid" style="margin-top:16px;">
+        <!-- Option 1: Waiver distribution % per year -->
+        <div class="opt-config-panel" id="opt1-config">
+          <div class="opt-config-header" onclick="toggleOptConfig('opt1-config')">
+            <span class="opt-config-title" style="color:var(--accent-purple);" data-i18n="opt1ConfigTitle">Option 1 — Distribuição Waiver/Ano</span>
+            <span class="opt-config-toggle">▼</span>
+          </div>
+          <div class="opt-config-body">
+            <div class="opt-config-row cols-4">
+              <div class="opt-config-item opt1"><label data-i18n="lblYear1Pct">Ano 1 (%)</label><input type="number" id="sl-opt1y1" min="0" max="100" step="5" value="25"></div>
+              <div class="opt-config-item opt1"><label data-i18n="lblYear2Pct">Ano 2 (%)</label><input type="number" id="sl-opt1y2" min="0" max="100" step="5" value="25"></div>
+              <div class="opt-config-item opt1"><label data-i18n="lblYear3Pct">Ano 3 (%)</label><input type="number" id="sl-opt1y3" min="0" max="100" step="5" value="25"></div>
+              <div class="opt-config-item opt1"><label data-i18n="lblYear4Pct">Ano 4 (%)</label><input type="number" id="sl-opt1y4" min="0" max="100" step="5" value="25"></div>
+            </div>
+            <div style="font-size:10px;color:var(--text-disabled);margin-top:6px;text-align:center;" id="opt1-sum-warn">Total: 100%</div>
+          </div>
+        </div>
+
+        <!-- Option 2: Fee % per quarter (first 2 years) -->
+        <div class="opt-config-panel" id="opt2-config">
+          <div class="opt-config-header" onclick="toggleOptConfig('opt2-config')">
+            <span class="opt-config-title" style="color:var(--accent-amber);" data-i18n="opt2ConfigTitle">Option 2 — Fee por Quarter (%)</span>
+            <span class="opt-config-toggle">▼</span>
+          </div>
+          <div class="opt-config-body">
+            <div style="font-size:9px;font-weight:600;color:var(--text-disabled);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;" data-i18n="year1Label">Ano 1</div>
+            <div class="opt-config-row cols-4">
+              <div class="opt-config-item opt2"><label>Q1</label><input type="number" id="sl-opt2q1" min="0" max="4" step="0.05" value="0.25"></div>
+              <div class="opt-config-item opt2"><label>Q2</label><input type="number" id="sl-opt2q2" min="0" max="4" step="0.05" value="0.40"></div>
+              <div class="opt-config-item opt2"><label>Q3</label><input type="number" id="sl-opt2q3" min="0" max="4" step="0.05" value="0.60"></div>
+              <div class="opt-config-item opt2"><label>Q4</label><input type="number" id="sl-opt2q4" min="0" max="4" step="0.05" value="0.80"></div>
+            </div>
+            <div style="font-size:9px;font-weight:600;color:var(--text-disabled);text-transform:uppercase;letter-spacing:0.06em;margin-top:8px;margin-bottom:4px;" data-i18n="year2Label">Ano 2</div>
+            <div class="opt-config-row cols-4">
+              <div class="opt-config-item opt2"><label>Q5</label><input type="number" id="sl-opt2q5" min="0" max="4" step="0.05" value="1.00"></div>
+              <div class="opt-config-item opt2"><label>Q6</label><input type="number" id="sl-opt2q6" min="0" max="4" step="0.05" value="1.00"></div>
+              <div class="opt-config-item opt2"><label>Q7</label><input type="number" id="sl-opt2q7" min="0" max="4" step="0.05" value="1.00"></div>
+              <div class="opt-config-item opt2"><label>Q8</label><input type="number" id="sl-opt2q8" min="0" max="4" step="0.05" value="1.00"></div>
+            </div>
+            <div style="font-size:10px;color:var(--text-disabled);margin-top:6px;text-align:center;" data-i18n="afterQ8Label">Após Q8: fee cheio quando waiver esgotado</div>
+          </div>
+        </div>
+
+        <!-- Option 3: GGR milestones -->
+        <div class="opt-config-panel" id="opt3-config">
+          <div class="opt-config-header" onclick="toggleOptConfig('opt3-config')">
+            <span class="opt-config-title" style="color:var(--accent-orange);" data-i18n="opt3ConfigTitle">Option 3 — Metas GGR Acumulado (R$M)</span>
+            <span class="opt-config-toggle">▼</span>
+          </div>
+          <div class="opt-config-body">
+            <div class="opt-config-row cols-4">
+              <div class="opt-config-item opt3"><label data-i18n="lblGoal1">Meta 1</label><input type="number" id="sl-meta1" min="1" max="5000" step="10" value="50"></div>
+              <div class="opt-config-item opt3"><label data-i18n="lblGoal2">Meta 2</label><input type="number" id="sl-meta2" min="1" max="5000" step="10" value="150"></div>
+              <div class="opt-config-item opt3"><label data-i18n="lblGoal3">Meta 3</label><input type="number" id="sl-meta3" min="1" max="5000" step="10" value="350"></div>
+              <div class="opt-config-item opt3"><label data-i18n="lblGoal4">Meta 4</label><input type="number" id="sl-meta4" min="1" max="5000" step="10" value="700"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- SIMULADOR -->
+<section id="simulador">
+  <div class="container">
+    <div class="section-header">
+      <p class="overline" data-i18n="simOverline">Parâmetros</p>
+      <h2 data-i18n="simTitle">Simulador de Premissas</h2>
+      <p data-i18n="simSub">Ajuste os valores e todas as options recalculam automaticamente.</p>
+    </div>
+    <div class="sim-panel">
+      <!-- Waiver: text input, first parameter -->
+      <div class="sim-waiver-row">
+        <div class="sim-waiver-input-group">
+          <label class="sim-label" for="sl-waiver"><span data-i18n="lblWaiverTotal">Waiver Total (R$M)</span></label>
+          <div class="sim-text-input-wrap">
+            <span class="sim-text-prefix">R$</span>
+            <input type="number" class="sim-text-input" id="sl-waiver" min="0" max="200" step="0.5" value="20">
+            <span class="sim-text-suffix">M</span>
+          </div>
+          <span class="sim-val" id="lbl-waiver" style="display:none;">20</span>
+        </div>
+      </div>
+
+      <div class="sim-grid-2col">
+        <!-- Left: GGR + Fee -->
+        <div class="sim-col">
+          <div class="sim-input-group">
+            <div class="sim-label"><span data-i18n="lblGgrIni">GGR Inicial (R$M/mês)</span><span class="sim-val" id="lbl-ggrIni">5</span></div>
+            <input type="range" class="sim-slider" id="sl-ggrIni" min="1" max="20" step="0.5" value="5">
+            <div class="sim-range-labels"><span>1</span><span>20</span></div>
+          </div>
+          <div class="sim-input-group">
+            <div class="sim-label"><span data-i18n="lblGgrMeta">GGR Meta Ano 1 (R$M/mês)</span><span class="sim-val" id="lbl-ggrMeta">50</span></div>
+            <input type="range" class="sim-slider" id="sl-ggrMeta" min="10" max="150" step="1" value="50">
+            <div class="sim-range-labels"><span>10</span><span>150</span></div>
+          </div>
+          <div class="sim-input-group">
+            <div class="sim-label"><span data-i18n="lblFee">Fee Padrão PAM (%)</span><span class="sim-val" id="lbl-fee">2.0</span></div>
+            <input type="range" class="sim-slider" id="sl-fee" min="0" max="4" step="0.1" value="2">
+            <div class="sim-range-labels"><span>0%</span><span>4%</span></div>
+          </div>
+        </div>
+
+        <!-- Right: Growth stacked vertically -->
+        <div class="sim-col sim-growth-group">
+          <div class="sim-growth-title" data-i18n="lblGrowth">Crescimento Anual (%)</div>
+          <div class="sim-input-group">
+            <div class="sim-label"><span data-i18n="lblGrowY2">Ano 2</span><span class="sim-val" id="lbl-grow2">100</span></div>
+            <input type="range" class="sim-slider" id="sl-grow2" min="0" max="150" step="5" value="100">
+          </div>
+          <div class="sim-input-group">
+            <div class="sim-label"><span data-i18n="lblGrowY3">Ano 3</span><span class="sim-val" id="lbl-grow3">70</span></div>
+            <input type="range" class="sim-slider" id="sl-grow3" min="0" max="150" step="5" value="70">
+          </div>
+          <div class="sim-input-group">
+            <div class="sim-label"><span data-i18n="lblGrowY4">Ano 4</span><span class="sim-val" id="lbl-grow4">25</span></div>
+            <input type="range" class="sim-slider" id="sl-grow4" min="0" max="150" step="5" value="25">
+          </div>
+          <div class="sim-range-labels"><span>0%</span><span>150%</span></div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</section>
+
+<!-- PROJEÇÃO (charts right after simulator) -->
+<section id="projecao" style="padding-top:0;">
+  <div class="container">
+    <div class="chart-container">
+      <h3 data-i18n="chartGgrTitle">GGR Mensal (R$ Milhões)</h3>
+      <div class="chart-wrapper"><canvas id="chartGGR"></canvas></div>
+    </div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+      <div class="chart-container" style="margin-bottom:0;">
+        <h3 data-i18n="chartFeeTitle">Fee Acumulado por Option</h3>
+        <div class="chart-wrapper"><canvas id="chartFee"></canvas></div>
+      </div>
+      <div class="chart-container" style="margin-bottom:0;">
+        <h3 data-i18n="chartWaiverTitle">Waiver Consumido vs Meta</h3>
+        <div class="chart-wrapper"><canvas id="chartWaiver"></canvas></div>
+      </div>
+    </div>
+    <!-- KPIs — Resumo dos Números -->
+    <div class="kpi-row" style="margin-top:20px;">
+      <div class="kpi-card">
+        <div class="kpi-label" data-i18n="kpiGgrLabel">GGR Total (45m)</div>
+        <div class="kpi-value green" id="kpi-ggr">R$4,8B</div>
+        <div class="kpi-sub">Mar/2026 — Nov/2029</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label" data-i18n="kpiFeeLabel">Fee Potencial</div>
+        <div class="kpi-value purple" id="kpi-fee">R$96M</div>
+        <div class="kpi-sub" id="kpi-fee-sub">a 2% do GGR</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label" data-i18n="kpiWaiverLabel">Waiver Proposto</div>
+        <div class="kpi-value amber" id="kpi-waiver">R$20M</div>
+        <div class="kpi-sub" id="kpi-waiver-pct">20,8% do fee</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label" data-i18n="kpiPaybackLabel">Payback Equiv.</div>
+        <div class="kpi-value blue" id="kpi-payback">—</div>
+        <div class="kpi-sub" id="kpi-payback-sub" data-i18n="kpiPaybackSub">meses até recuperar waiver</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<div class="container"><div class="divider"></div></div>
+
+<!-- OPTIONS DE NEGOCIAÇÃO -->
+<section id="options">
+  <div class="container">
+    <div class="section-header">
+      <p class="overline" data-i18n="optOverline">Simulações</p>
+      <h2 data-i18n="optTitle">Options de Negociação</h2>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('comparativo',this)" data-i18n="tabComparative">Comparativo</button>
+      <button class="tab-btn" onclick="switchTab('option1',this)">Option 1 — Waiver per Period</button>
+      <button class="tab-btn" onclick="switchTab('option2',this)">Option 2 — Fee Ramp-up</button>
+      <button class="tab-btn" onclick="switchTab('option3',this)">Option 3 — Accumulated GGR</button>
+    </div>
+
+    <!-- Tab: Comparativo -->
+    <div class="tab-panel active" id="tab-comparativo">
+      <table class="comparison-table" id="tbl-comp">
+        <thead>
+          <tr>
+            <th data-i18n="thMetric">Métrica</th>
+            <th>Option 1 — Waiver per Period</th>
+            <th>Option 2 — Fee Ramp-up</th>
+            <th>Option 3 — Accumulated GGR</th>
+          </tr>
+        </thead>
+        <tbody id="tbl-body"></tbody>
+      </table>
+      <div style="margin-top:24px" id="progress-bars"></div>
+    </div>
+
+    <!-- Tab: Option 1 -->
+    <div class="tab-panel" id="tab-option1">
+      <div class="cenario-grid">
+        <div class="cenario-card" id="opt1-stats"></div>
+        <div class="cenario-card" id="opt1-info"></div>
+      </div>
+    </div>
+
+    <!-- Tab: Option 2 -->
+    <div class="tab-panel" id="tab-option2">
+      <div class="cenario-grid">
+        <div class="cenario-card" id="opt2-stats"></div>
+        <div class="cenario-card" id="opt2-info"></div>
+      </div>
+    </div>
+
+    <!-- Tab: Option 3 -->
+    <div class="tab-panel" id="tab-option3">
+      <div class="cenario-grid">
+        <div class="cenario-card" id="opt3-stats"></div>
+        <div class="cenario-card" id="opt3-info"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="container"><div class="divider"></div></div>
+
+<!-- GESTÃO: Save + Salvos + Comparar -->
+<section id="salvos">
+  <div class="container">
+    <div class="section-header">
+      <p class="overline" data-i18n="savedOverline">Gestão</p>
+      <h2 data-i18n="savedTitle">Cenários Salvos</h2>
+      <p data-i18n="savedSub">Salve, compare e gerencie seus cenários simulados.</p>
+    </div>
+
+    <!-- SAVE SCENARIO -->
+    <div class="save-panel">
+      <h3 data-i18n="saveCurrentTitle">Salvar Cenário Atual</h3>
+      <div class="save-form">
+        <div class="form-group">
+          <label data-i18n="lblScenarioName">Nome do Cenário</label>
+          <input type="text" class="form-input" id="save-name" data-i18n-placeholder="phScenarioName" placeholder="Ex: Cenário Conservador">
+        </div>
+        <div class="form-group">
+          <label data-i18n="lblCreatedBy">Criado por</label>
+          <input type="text" class="form-input" id="save-author" data-i18n-placeholder="phCreatedBy" placeholder="Seu nome">
+        </div>
+        <div class="form-group">
+          <label data-i18n="lblRating">Avaliação</label>
+          <div class="star-rating">
+            <input type="radio" name="rating" id="star5" value="5"><label for="star5">&#9733;</label>
+            <input type="radio" name="rating" id="star4" value="4"><label for="star4">&#9733;</label>
+            <input type="radio" name="rating" id="star3" value="3" checked><label for="star3">&#9733;</label>
+            <input type="radio" name="rating" id="star2" value="2"><label for="star2">&#9733;</label>
+            <input type="radio" name="rating" id="star1" value="1"><label for="star1">&#9733;</label>
+          </div>
+        </div>
+        <button class="btn-primary" onclick="saveScenario()" data-i18n="btnSave">Salvar</button>
+      </div>
+    </div>
+
+    <div id="scenarios-list"></div>
+
+    <div style="margin-top:32px;" id="comparar">
+      <div class="section-header">
+        <p class="overline" data-i18n="cmpOverline">Análise Comparativa</p>
+        <h2 data-i18n="cmpTitle">Comparar Cenários</h2>
+        <p data-i18n="cmpSub">Selecione 2 ou mais cenários na tabela acima para comparar visualmente.</p>
+      </div>
+      <div id="compare-content">
+        <div class="empty-state" data-i18n="cmpEmpty">Selecione cenários na tabela acima para visualizar a comparação.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DELETE MODAL -->
+<div class="modal-overlay" id="modal-delete">
+  <div class="modal">
+    <h3 data-i18n="modalDeleteTitle">Excluir Cenário</h3>
+    <p id="modal-delete-msg" data-i18n="modalDeleteMsg">Tem certeza que deseja excluir este cenário? Esta ação não pode ser desfeita.</p>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()" data-i18n="btnCancel">Cancelar</button>
+      <button class="btn-danger" id="modal-delete-confirm" onclick="confirmDelete()" data-i18n="btnDelete">Excluir</button>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="container">
+    <p data-i18n-html="footerText"><span>PAM Viabilidade</span> — Simulador Financeiro &bull; Confidencial &bull; Mar/2026</p>
+  </div>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== I18N SYSTEM =====
+let currentLang = localStorage.getItem('pam_lang') || 'br';
+
+const i18n = {
+  br: {
+    // Page title
+    pageTitle: 'Viabilidade PAM — Simulador de Migração',
+    // Nav
+    navBrand: 'Viabilidade',
+    navSimulator: 'Simulador',
+    navProjection: 'Projeção',
+    navSaved: 'Salvos',
+    navCompare: 'Comparar',
+    // Hero
+    heroOverline: 'Análise de Viabilidade \u2022 Licença Federal Brasil',
+    heroTitle: 'Migração de <em>Plataforma PAM</em><br>Simulador Comercial',
+    heroSub: 'Ajuste os parâmetros e veja o impacto em tempo real nos 3 modelos de negociação.',
+    // Infographic pillars
+    infoOverline: 'Por que este deal faz sentido',
+    infoTitle: 'A Lógica do Incentivo',
+    infoSub: '4 pilares que sustentam a proposta de migração com waiver',
+    pillarTrackDesc: 'Grupo operador com <strong style="color:var(--accent-purple)">histórico comprovado</strong> — R$1.7Bi em depósitos em 2025. Licença federal ativa.',
+    pillarIncentiveTitle: 'Incentivo',
+    pillarIncentiveDesc: '<strong style="color:var(--accent-amber)">KPIs claros</strong> liberam desconto da plataforma. Zero risco: waiver condicionado a performance real.',
+    pillarIncentiveValue: 'Zero risco',
+    pillarMigrationTitle: 'Migração',
+    pillarMigrationDesc: 'Nova plataforma PAM para escalar. <strong style="color:var(--accent-blue)">GGR cresce gradualmente</strong> — limitado pelo fluxo de caixa da transição.',
+    pillarMigrationValue: 'Cash-flow limitado',
+    pillarWinDesc: 'Com incentivo, <strong style="color:var(--accent-green)">operação cresce mais rápido</strong>. Plataforma lucra mais com volume maior. Todos ganham.',
+    pillarWinValue: 'Todos lucram +',
+    // Option config panels
+    opt1ConfigTitle: 'Option 1 — Distribuição Waiver/Ano',
+    opt2ConfigTitle: 'Option 2 — Fee por Quarter (%)',
+    opt3ConfigTitle: 'Option 3 — Metas GGR Acumulado (R$M)',
+    lblGoal1: 'Meta 1',
+    lblGoal2: 'Meta 2',
+    lblGoal3: 'Meta 3',
+    lblGoal4: 'Meta 4',
+    year1Label: 'Ano 1',
+    year2Label: 'Ano 2',
+    afterQ8Label: 'Após Q8: fee cheio quando waiver esgotado',
+    lblYear1Pct: 'Ano 1 (%)',
+    lblYear2Pct: 'Ano 2 (%)',
+    lblYear3Pct: 'Ano 3 (%)',
+    lblYear4Pct: 'Ano 4 (%)',
+    // Simulator
+    simOverline: 'Parâmetros',
+    simTitle: 'Simulador de Premissas',
+    simSub: 'Ajuste os valores e todas as options recalculam automaticamente.',
+    lblWaiverTotal: 'Waiver Total (R$M)',
+    lblGgrIni: 'GGR Inicial (R$M/mês)',
+    lblGgrMeta: 'GGR Meta Ano 1 (R$M/mês)',
+    lblFee: 'Fee Padrão PAM (%)',
+    lblGrowth: 'Crescimento Anual (%)',
+    lblGrowY2: 'Ano 2',
+    lblGrowY3: 'Ano 3',
+    lblGrowY4: 'Ano 4',
+    // Charts
+    chartGgrTitle: 'GGR Mensal (R$ Milhões)',
+    chartFeeTitle: 'Fee Acumulado por Option',
+    chartWaiverTitle: 'Waiver Consumido vs Meta',
+    chartGgrLabel: 'GGR Mensal (R$M)',
+    chartWaiverGoal: 'Meta Waiver',
+    // KPIs
+    kpiGgrLabel: 'GGR Total (45m)',
+    kpiFeeLabel: 'Fee Potencial',
+    kpiWaiverLabel: 'Waiver Proposto',
+    kpiPaybackLabel: 'Payback Equiv.',
+    kpiPaybackSub: 'meses até recuperar waiver',
+    kpiFeeSub: 'a {fee}% do GGR',
+    kpiWaiverPct: '{pct}% do fee',
+    kpiPaybackNotRecover: 'não recupera em 45m',
+    kpiPaybackMonths: 'meses até recuperar waiver',
+    // Options section
+    optOverline: 'Simulações',
+    optTitle: 'Options de Negociação',
+    tabComparative: 'Comparativo',
+    thMetric: 'Métrica',
+    // Comparison table rows
+    tblMechanism: 'Mecanismo',
+    tblWaiverUsed: 'Waiver Total Usado',
+    tblPlatformRevenue: 'Receita Plataforma (45m)',
+    tblOperatorAttract: 'Atratividade p/ Operador',
+    tblPlatformAttract: 'Atratividade p/ Plataforma',
+    tblWaiverExhausted: 'Waiver Esgotado',
+    tblWaiverPerYear: 'waiver/ano',
+    tblFeeRamp: 'Fee ramp',
+    tbl8Q: '8Q',
+    tbl4GoalsGGR: '4 metas GGR acumulado',
+    tblMonth: 'Mês',
+    tblGoals: 'metas',
+    badgeHigh: 'Alta',
+    badgeMedium: 'Média',
+    badgeMediumHigh: 'Média-Alta',
+    // Progress cards
+    progressWaiverUsed: 'Waiver Usado',
+    progressDiscountAcc: 'Desconto Acumulado',
+    progressWaiverUnlocked: 'Waiver Desbloqueado',
+    progressPlatformRevenue: 'Receita Plataforma',
+    progressAnnualCap: 'Cap Anual',
+    progressRevenueDay1: 'Receita Dia 1',
+    progressGoalsReached: 'Metas Atingidas',
+    badgeYes: 'Sim',
+    // Option 1 detail
+    opt1HowTitle: 'Como Funciona',
+    opt1HowDesc: 'O waiver de <strong style="color:var(--accent-amber)">R${waiver}M</strong> é distribuído por ano: {yearCaps}. Fees são descontados até o cap anual. Plataforma recebe receita desde o Dia 1.',
+    opt1AdvOperator: 'Vantagem p/ Operador',
+    opt1AdvOperatorDesc: 'Desconto previsível e contínuo durante 4 anos. Distribuição configurável por ano.',
+    opt1AdvPlatform: 'Vantagem p/ Plataforma',
+    opt1AdvPlatformDesc: 'Receita desde o Dia 1 quando fees excedem o cap anual.',
+    opt1FeeBase: 'Fee base',
+    opt1WaiverTotalUsed: 'Waiver total usado',
+    opt1PlatformRevenue: 'Receita total plataforma',
+    // Option 2 detail
+    opt2WaiverExhausted: 'Waiver esgotado',
+    opt2PostWaiver: 'Pós-waiver',
+    opt2FullFee: '(fee cheio)',
+    opt2DiscountAcc: 'Desconto acumulado',
+    opt2TotalRevenue: 'Receita total',
+    opt2HowDesc: 'Fee começa em <strong style="color:var(--accent-amber)">{startRate}%</strong> e sobe por quarter conforme configurado. Após 8 quarters, mantém a última taxa até o desconto acumulado atingir <strong style="color:var(--accent-amber)">R${waiver}M</strong>. Depois, fee cheio de {fee}%.',
+    opt2WaiverExhaustedCallout: 'Waiver Esgotado',
+    opt2WaiverExhaustedDesc: 'Desconto acumulado atinge R${waiver}M no <strong style="color:var(--text-primary)">mês {month}</strong>. Após isso, plataforma recebe fee cheio.',
+    opt2AdvPlatform: 'Vantagem p/ Plataforma',
+    opt2AdvPlatformDesc: 'Receita desde o Dia 1. {revenue} em 45 meses.',
+    // Option 3 detail
+    opt3WaiverUnlocked: 'Waiver desbloqueado',
+    opt3PlatformRevenue: 'Receita total plataforma',
+    opt3HowDesc: 'O waiver de <strong style="color:var(--accent-amber)">R${waiver}M</strong> é dividido em 4 parcelas de <strong style="color:var(--accent-orange)">R${tranche}M</strong>. Cada parcela é desbloqueada ao atingir uma meta de GGR acumulado. Sem prazo fixo — depende da performance.',
+    opt3GoalsReached: 'Metas Atingidas',
+    opt3AdvPlatform: 'Vantagem p/ Plataforma',
+    opt3AdvPlatformDesc: 'Waiver só é liberado quando há performance comprovada. Risco mínimo.',
+    opt3AdvOperator: 'Vantagem p/ Operador',
+    opt3AdvOperatorDesc: 'Quanto mais rápido cresce, mais rápido desbloqueia o waiver. Incentivo alinhado.',
+    opt3GoalLabel: 'Meta',
+    opt3MonthLabel: 'mês',
+    // Infographic cards
+    infoOpt1Title: 'Waiver distribuído por ano',
+    infoOpt2Desc: 'Fee sobe por quarter. Mantém última taxa até esgotar o waiver, depois fee cheio de {fee}%.',
+    infoOpt3Title: '4 metas de GGR desbloqueiam waiver',
+    infoOpt3Desc: 'A cada meta de GGR acumulado atingida, desbloqueia R${tranche}M do waiver como crédito.',
+    // Saved scenarios
+    savedOverline: 'Gestão',
+    savedTitle: 'Cenários Salvos',
+    savedSub: 'Salve, compare e gerencie seus cenários simulados.',
+    saveCurrentTitle: 'Salvar Cenário Atual',
+    lblScenarioName: 'Nome do Cenário',
+    phScenarioName: 'Ex: Cenário Conservador',
+    lblCreatedBy: 'Criado por',
+    phCreatedBy: 'Seu nome',
+    lblRating: 'Avaliação',
+    btnSave: 'Salvar',
+    btnLoad: 'Carregar',
+    btnDeleteSmall: 'Excluir',
+    emptyScenarios: 'Nenhum cenário salvo ainda. Use o simulador e clique em "Salvar".',
+    thScenario: 'Cenário',
+    thAuthor: 'Autor',
+    thDate: 'Data',
+    thRating: 'Avaliação',
+    thGgrTotal: 'GGR Total',
+    thWaiver: 'Waiver',
+    thActions: 'Ações',
+    anonymous: 'Anônimo',
+    toastSaved: 'Cenário "{name}" salvo com sucesso',
+    toastLoaded: 'Cenário "{name}" carregado',
+    // Compare section
+    cmpOverline: 'Análise Comparativa',
+    cmpTitle: 'Comparar Cenários',
+    cmpSub: 'Selecione 2 ou mais cenários na tabela acima para comparar visualmente.',
+    cmpEmpty: 'Selecione cenários na tabela acima para visualizar a comparação.',
+    cmpSelect2: 'Selecione 2 ou mais cenários na tabela acima para visualizar a comparação.',
+    cmpChartGGR: 'GGR Mensal — Comparativo',
+    cmpChartRadar: 'KPIs — Radar',
+    cmpConclusionTitle: 'Conclusão da Comparação',
+    cmpBestScenario: 'Melhor Cenário',
+    cmpWorstRevenue: 'Menor Receita',
+    cmpRevenueOpt1: 'Receita Opt1',
+    cmpAnnualCap: 'Cap Anual',
+    cmpHighRating: 'Avaliação alta ({stars} estrelas).',
+    radarGgrScale: 'GGR Scale',
+    radarRevenueMargin: 'Margem Receita',
+    radarFeeEfficiency: 'Eficiência Fee',
+    radarRating: 'Avaliação',
+    // Compare table
+    cmpGgrInitial: 'GGR Inicial',
+    cmpGgrGoalY1: 'GGR Meta Ano 1',
+    cmpGrowthA234: 'Crescimento A2/A3/A4',
+    cmpFeePAM: 'Fee PAM',
+    cmpRevenueOpt1Table: 'Receita Opt 1',
+    cmpRevenueOpt3Table: 'Receita Opt 3',
+    // Delete modal
+    modalDeleteTitle: 'Excluir Cenário',
+    modalDeleteMsg: 'Tem certeza que deseja excluir este cenário? Esta ação não pode ser desfeita.',
+    modalDeleteMsgNamed: 'Tem certeza que deseja excluir o cenário <strong style="color:var(--text-primary)">"{name}"</strong>? Esta ação não pode ser desfeita.',
+    btnCancel: 'Cancelar',
+    btnDelete: 'Excluir',
+    // Footer
+    footerText: '<span>PAM Viabilidade</span> — Simulador Financeiro \u2022 Confidencial \u2022 Mar/2026',
+    // Seed scenario names
+    seedBase: 'Base — Premissas Padrão',
+    seedOptimistic: 'Otimista — Crescimento Acelerado',
+    seedConservative: 'Conservador — Crescimento Cauteloso',
+    seedAuthor: 'Sistema',
+    // Fee Pot label
+    feePotLabel: 'Fee Pot.',
+    revenueOpt1Label: 'Receita Opt1',
+    revenueOpt3Label: 'Receita Opt3',
+    ratingLabel: 'Avaliação',
+    // Quarters
+    quarters: '8 quarters',
+    afterWaiver: 'Após Q8',
+  },
+  en: {
+    // Page title
+    pageTitle: 'PAM Viability — Migration Simulator',
+    // Nav
+    navBrand: 'Viability',
+    navSimulator: 'Simulator',
+    navProjection: 'Projection',
+    navSaved: 'Saved',
+    navCompare: 'Compare',
+    // Hero
+    heroOverline: 'Viability Analysis \u2022 Brazil Federal License',
+    heroTitle: 'Migration of <em>PAM Platform</em><br>Commercial Simulator',
+    heroSub: 'Adjust the parameters and see the real-time impact on the 3 negotiation models.',
+    // Infographic pillars
+    infoOverline: 'Why this deal makes sense',
+    infoTitle: 'The Incentive Logic',
+    infoSub: '4 pillars supporting the migration proposal with waiver',
+    pillarTrackDesc: 'Operator group with <strong style="color:var(--accent-purple)">proven track record</strong> — R$1.7Bn in deposits in 2025. Active federal license.',
+    pillarIncentiveTitle: 'Incentive',
+    pillarIncentiveDesc: '<strong style="color:var(--accent-amber)">Clear KPIs</strong> unlock platform discount. Zero risk: waiver conditioned on actual performance.',
+    pillarIncentiveValue: 'Zero risk',
+    pillarMigrationTitle: 'Migration',
+    pillarMigrationDesc: 'New PAM platform to scale. <strong style="color:var(--accent-blue)">GGR grows gradually</strong> — limited by transition cash flow.',
+    pillarMigrationValue: 'Cash-flow limited',
+    pillarWinDesc: 'With incentive, <strong style="color:var(--accent-green)">operation grows faster</strong>. Platform profits more with higher volume. Everyone wins.',
+    pillarWinValue: 'Everyone profits +',
+    // Option config panels
+    opt1ConfigTitle: 'Option 1 — Waiver Distribution/Year',
+    opt2ConfigTitle: 'Option 2 — Fee per Quarter (%)',
+    opt3ConfigTitle: 'Option 3 — Accumulated GGR Goals (R$M)',
+    lblGoal1: 'Goal 1',
+    lblGoal2: 'Goal 2',
+    lblGoal3: 'Goal 3',
+    lblGoal4: 'Goal 4',
+    year1Label: 'Year 1',
+    year2Label: 'Year 2',
+    afterQ8Label: 'After Q8: full fee when waiver exhausted',
+    lblYear1Pct: 'Year 1 (%)',
+    lblYear2Pct: 'Year 2 (%)',
+    lblYear3Pct: 'Year 3 (%)',
+    lblYear4Pct: 'Year 4 (%)',
+    // Simulator
+    simOverline: 'Parameters',
+    simTitle: 'Assumptions Simulator',
+    simSub: 'Adjust the values and all options recalculate automatically.',
+    lblWaiverTotal: 'Total Waiver (R$M)',
+    lblGgrIni: 'Initial GGR (R$M/month)',
+    lblGgrMeta: 'GGR Goal Year 1 (R$M/month)',
+    lblFee: 'Standard PAM Fee (%)',
+    lblGrowth: 'Annual Growth (%)',
+    lblGrowY2: 'Year 2',
+    lblGrowY3: 'Year 3',
+    lblGrowY4: 'Year 4',
+    // Charts
+    chartGgrTitle: 'Monthly GGR (R$ Millions)',
+    chartFeeTitle: 'Accumulated Fee by Option',
+    chartWaiverTitle: 'Waiver Consumed vs Goal',
+    chartGgrLabel: 'Monthly GGR (R$M)',
+    chartWaiverGoal: 'Waiver Goal',
+    // KPIs
+    kpiGgrLabel: 'Total GGR (45m)',
+    kpiFeeLabel: 'Potential Fee',
+    kpiWaiverLabel: 'Proposed Waiver',
+    kpiPaybackLabel: 'Equiv. Payback',
+    kpiPaybackSub: 'months to recover waiver',
+    kpiFeeSub: 'at {fee}% of GGR',
+    kpiWaiverPct: '{pct}% of fee',
+    kpiPaybackNotRecover: 'does not recover in 45m',
+    kpiPaybackMonths: 'months to recover waiver',
+    // Options section
+    optOverline: 'Simulations',
+    optTitle: 'Negotiation Options',
+    tabComparative: 'Comparative',
+    thMetric: 'Metric',
+    // Comparison table rows
+    tblMechanism: 'Mechanism',
+    tblWaiverUsed: 'Total Waiver Used',
+    tblPlatformRevenue: 'Platform Revenue (45m)',
+    tblOperatorAttract: 'Attractiveness for Operator',
+    tblPlatformAttract: 'Attractiveness for Platform',
+    tblWaiverExhausted: 'Waiver Exhausted',
+    tblWaiverPerYear: 'waiver/year',
+    tblFeeRamp: 'Fee ramp',
+    tbl8Q: '8Q',
+    tbl4GoalsGGR: '4 accumulated GGR goals',
+    tblMonth: 'Month',
+    tblGoals: 'goals',
+    badgeHigh: 'High',
+    badgeMedium: 'Medium',
+    badgeMediumHigh: 'Medium-High',
+    // Progress cards
+    progressWaiverUsed: 'Waiver Used',
+    progressDiscountAcc: 'Accumulated Discount',
+    progressWaiverUnlocked: 'Waiver Unlocked',
+    progressPlatformRevenue: 'Platform Revenue',
+    progressAnnualCap: 'Annual Cap',
+    progressRevenueDay1: 'Revenue Day 1',
+    progressGoalsReached: 'Goals Reached',
+    badgeYes: 'Yes',
+    // Option 1 detail
+    opt1HowTitle: 'How It Works',
+    opt1HowDesc: 'The waiver of <strong style="color:var(--accent-amber)">R${waiver}M</strong> is distributed by year: {yearCaps}. Fees are discounted up to the annual cap. Platform receives revenue from Day 1.',
+    opt1AdvOperator: 'Advantage for Operator',
+    opt1AdvOperatorDesc: 'Predictable and continuous discount for 4 years. Configurable distribution per year.',
+    opt1AdvPlatform: 'Advantage for Platform',
+    opt1AdvPlatformDesc: 'Revenue from Day 1 when fees exceed the annual cap.',
+    opt1FeeBase: 'Base fee',
+    opt1WaiverTotalUsed: 'Total waiver used',
+    opt1PlatformRevenue: 'Total platform revenue',
+    // Option 2 detail
+    opt2WaiverExhausted: 'Waiver exhausted',
+    opt2PostWaiver: 'Post-waiver',
+    opt2FullFee: '(full fee)',
+    opt2DiscountAcc: 'Accumulated discount',
+    opt2TotalRevenue: 'Total revenue',
+    opt2HowDesc: 'Fee starts at <strong style="color:var(--accent-amber)">{startRate}%</strong> and increases per quarter as configured. After 8 quarters, keeps the last rate until accumulated discount reaches <strong style="color:var(--accent-amber)">R${waiver}M</strong>. Then, full fee of {fee}%.',
+    opt2WaiverExhaustedCallout: 'Waiver Exhausted',
+    opt2WaiverExhaustedDesc: 'Accumulated discount reaches R${waiver}M at <strong style="color:var(--text-primary)">month {month}</strong>. After that, platform receives full fee.',
+    opt2AdvPlatform: 'Advantage for Platform',
+    opt2AdvPlatformDesc: 'Revenue from Day 1. {revenue} in 45 months.',
+    // Option 3 detail
+    opt3WaiverUnlocked: 'Waiver unlocked',
+    opt3PlatformRevenue: 'Total platform revenue',
+    opt3HowDesc: 'The waiver of <strong style="color:var(--accent-amber)">R${waiver}M</strong> is divided into 4 tranches of <strong style="color:var(--accent-orange)">R${tranche}M</strong>. Each tranche is unlocked when an accumulated GGR goal is reached. No fixed deadline — depends on performance.',
+    opt3GoalsReached: 'Goals Reached',
+    opt3AdvPlatform: 'Advantage for Platform',
+    opt3AdvPlatformDesc: 'Waiver is only released when there is proven performance. Minimal risk.',
+    opt3AdvOperator: 'Advantage for Operator',
+    opt3AdvOperatorDesc: 'The faster it grows, the faster the waiver is unlocked. Aligned incentive.',
+    opt3GoalLabel: 'Goal',
+    opt3MonthLabel: 'month',
+    // Infographic cards
+    infoOpt1Title: 'Waiver distributed per year',
+    infoOpt2Desc: 'Fee increases per quarter. Keeps last rate until waiver is exhausted, then full fee of {fee}%.',
+    infoOpt3Title: '4 GGR goals unlock waiver',
+    infoOpt3Desc: 'Each accumulated GGR goal reached unlocks R${tranche}M of waiver as credit.',
+    // Saved scenarios
+    savedOverline: 'Management',
+    savedTitle: 'Saved Scenarios',
+    savedSub: 'Save, compare and manage your simulated scenarios.',
+    saveCurrentTitle: 'Save Current Scenario',
+    lblScenarioName: 'Scenario Name',
+    phScenarioName: 'E.g.: Conservative Scenario',
+    lblCreatedBy: 'Created by',
+    phCreatedBy: 'Your name',
+    lblRating: 'Rating',
+    btnSave: 'Save',
+    btnLoad: 'Load',
+    btnDeleteSmall: 'Delete',
+    emptyScenarios: 'No scenarios saved yet. Use the simulator and click "Save".',
+    thScenario: 'Scenario',
+    thAuthor: 'Author',
+    thDate: 'Date',
+    thRating: 'Rating',
+    thGgrTotal: 'Total GGR',
+    thWaiver: 'Waiver',
+    thActions: 'Actions',
+    anonymous: 'Anonymous',
+    toastSaved: 'Scenario "{name}" saved successfully',
+    toastLoaded: 'Scenario "{name}" loaded',
+    // Compare section
+    cmpOverline: 'Comparative Analysis',
+    cmpTitle: 'Compare Scenarios',
+    cmpSub: 'Select 2 or more scenarios in the table above to compare visually.',
+    cmpEmpty: 'Select scenarios in the table above to view the comparison.',
+    cmpSelect2: 'Select 2 or more scenarios in the table above to view the comparison.',
+    cmpChartGGR: 'Monthly GGR — Comparison',
+    cmpChartRadar: 'KPIs — Radar',
+    cmpConclusionTitle: 'Comparison Conclusion',
+    cmpBestScenario: 'Best Scenario',
+    cmpWorstRevenue: 'Lowest Revenue',
+    cmpRevenueOpt1: 'Revenue Opt1',
+    cmpAnnualCap: 'Annual Cap',
+    cmpHighRating: 'High rating ({stars} stars).',
+    radarGgrScale: 'GGR Scale',
+    radarRevenueMargin: 'Revenue Margin',
+    radarFeeEfficiency: 'Fee Efficiency',
+    radarRating: 'Rating',
+    // Compare table
+    cmpGgrInitial: 'Initial GGR',
+    cmpGgrGoalY1: 'GGR Goal Year 1',
+    cmpGrowthA234: 'Growth Y2/Y3/Y4',
+    cmpFeePAM: 'PAM Fee',
+    cmpRevenueOpt1Table: 'Revenue Opt 1',
+    cmpRevenueOpt3Table: 'Revenue Opt 3',
+    // Delete modal
+    modalDeleteTitle: 'Delete Scenario',
+    modalDeleteMsg: 'Are you sure you want to delete this scenario? This action cannot be undone.',
+    modalDeleteMsgNamed: 'Are you sure you want to delete the scenario <strong style="color:var(--text-primary)">"{name}"</strong>? This action cannot be undone.',
+    btnCancel: 'Cancel',
+    btnDelete: 'Delete',
+    // Footer
+    footerText: '<span>PAM Viability</span> — Financial Simulator \u2022 Confidential \u2022 Mar/2026',
+    // Seed scenario names
+    seedBase: 'Baseline — Default Assumptions',
+    seedOptimistic: 'Optimistic — Accelerated Growth',
+    seedConservative: 'Conservative — Cautious Growth',
+    seedAuthor: 'System',
+    // Fee Pot label
+    feePotLabel: 'Fee Pot.',
+    revenueOpt1Label: 'Revenue Opt1',
+    revenueOpt3Label: 'Revenue Opt3',
+    ratingLabel: 'Rating',
+    // Quarters
+    quarters: '8 quarters',
+    afterWaiver: 'After Q8',
+  }
+};
+
+function T(key) { return i18n[currentLang][key] || i18n.br[key] || key; }
+
+function applyStaticI18n() {
+  // Text content
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (i18n[currentLang][key]) el.textContent = i18n[currentLang][key];
+  });
+  // HTML content
+  document.querySelectorAll('[data-i18n-html]').forEach(el => {
+    const key = el.getAttribute('data-i18n-html');
+    if (i18n[currentLang][key]) el.innerHTML = i18n[currentLang][key];
+  });
+  // Placeholders
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    const key = el.getAttribute('data-i18n-placeholder');
+    if (i18n[currentLang][key]) el.placeholder = i18n[currentLang][key];
+  });
+  // Page title
+  document.getElementById('page-title').textContent = T('pageTitle');
+  // Language toggle active state
+  document.querySelectorAll('.lang-option').forEach(opt => {
+    opt.classList.toggle('active', opt.dataset.lang === currentLang);
+  });
+}
+
+function setLang(lang) {
+  currentLang = lang;
+  localStorage.setItem('pam_lang', lang);
+  document.documentElement.lang = lang === 'br' ? 'pt-BR' : 'en';
+  applyStaticI18n();
+  recalculate();
+  renderScenarios();
+  updateComparison();
+  // Update chart labels
+  chartGGR.data.datasets[0].label = T('chartGgrLabel');
+  chartWaiver.data.datasets[3].label = T('chartWaiverGoal');
+  chartGGR.update('none');
+  chartWaiver.update('none');
+}
+
+// ===== REFS =====
+const sl = id => document.getElementById(id);
+const $ = id => document.getElementById(id);
+
+const sliders = {
+  ggrIni:  { el: sl('sl-ggrIni'),  lbl: sl('lbl-ggrIni'),  fmt: v => v },
+  ggrMeta: { el: sl('sl-ggrMeta'), lbl: sl('lbl-ggrMeta'), fmt: v => v },
+  grow2:   { el: sl('sl-grow2'),   lbl: sl('lbl-grow2'),   fmt: v => v },
+  grow3:   { el: sl('sl-grow3'),   lbl: sl('lbl-grow3'),   fmt: v => v },
+  grow4:   { el: sl('sl-grow4'),   lbl: sl('lbl-grow4'),   fmt: v => v },
+  fee:     { el: sl('sl-fee'),     lbl: sl('lbl-fee'),     fmt: v => parseFloat(v).toFixed(1) },
+  waiver:  { el: sl('sl-waiver'),  lbl: sl('lbl-waiver'),  fmt: v => v },
+  meta1:   { el: sl('sl-meta1'),   lbl: null, fmt: v => v },
+  meta2:   { el: sl('sl-meta2'),   lbl: null, fmt: v => v },
+  meta3:   { el: sl('sl-meta3'),   lbl: null, fmt: v => v },
+  meta4:   { el: sl('sl-meta4'),   lbl: null, fmt: v => v },
+  // Option 1 year distribution
+  opt1y1:  { el: sl('sl-opt1y1'), lbl: null, fmt: v => v },
+  opt1y2:  { el: sl('sl-opt1y2'), lbl: null, fmt: v => v },
+  opt1y3:  { el: sl('sl-opt1y3'), lbl: null, fmt: v => v },
+  opt1y4:  { el: sl('sl-opt1y4'), lbl: null, fmt: v => v },
+  // Option 2 fee per quarter
+  opt2q1:  { el: sl('sl-opt2q1'), lbl: null, fmt: v => v },
+  opt2q2:  { el: sl('sl-opt2q2'), lbl: null, fmt: v => v },
+  opt2q3:  { el: sl('sl-opt2q3'), lbl: null, fmt: v => v },
+  opt2q4:  { el: sl('sl-opt2q4'), lbl: null, fmt: v => v },
+  opt2q5:  { el: sl('sl-opt2q5'), lbl: null, fmt: v => v },
+  opt2q6:  { el: sl('sl-opt2q6'), lbl: null, fmt: v => v },
+  opt2q7:  { el: sl('sl-opt2q7'), lbl: null, fmt: v => v },
+  opt2q8:  { el: sl('sl-opt2q8'), lbl: null, fmt: v => v },
+};
+
+// Text-only inputs (no label to update)
+const textOnlyKeys = ['waiver','meta1','meta2','meta3','meta4',
+  'opt1y1','opt1y2','opt1y3','opt1y4',
+  'opt2q1','opt2q2','opt2q3','opt2q4','opt2q5','opt2q6','opt2q7','opt2q8'];
+
+// Bind sliders (range inputs update label + recalc)
+Object.entries(sliders).forEach(([key, s]) => {
+  if (textOnlyKeys.includes(key)) {
+    s.el.addEventListener('input', () => {
+      if (key.startsWith('opt1y')) updateOpt1Sum();
+      recalculate();
+    });
+  } else {
+    s.el.addEventListener('input', () => { s.lbl.textContent = s.fmt(s.el.value); recalculate(); });
+  }
+});
+
+// Toggle collapsible option configs
+function toggleOptConfig(id) {
+  const panels = ['opt1-config','opt2-config','opt3-config'];
+  const target = $(id);
+  const willOpen = !target.classList.contains('open');
+  panels.forEach(pid => {
+    if (willOpen) $(pid).classList.add('open');
+    else $(pid).classList.remove('open');
+  });
+}
+
+// Toast notification
+function showToast(msg, color) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.style.borderColor = color || 'var(--accent-green)';
+  t.classList.add('show');
+  clearTimeout(t._tid);
+  t._tid = setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// Option 1 sum warning
+function updateOpt1Sum() {
+  const sum = ['opt1y1','opt1y2','opt1y3','opt1y4'].reduce((a, k) => a + parseFloat(sliders[k].el.value || 0), 0);
+  const el = $('opt1-sum-warn');
+  el.textContent = `Total: ${sum}%`;
+  el.style.color = sum === 100 ? 'var(--accent-green)' : 'var(--accent-red)';
+}
+
+// ===== QUARTER LABELS HELPER =====
+function buildQuarterLabels(months) {
+  // Map each month string (e.g. 'Mar/26') to its quarter label
+  const monthToQ = { 'Jan': 'Q1', 'Fev': 'Q1', 'Mar': 'Q1', 'Abr': 'Q2', 'Mai': 'Q2', 'Jun': 'Q2',
+                     'Jul': 'Q3', 'Ago': 'Q3', 'Set': 'Q3', 'Out': 'Q4', 'Nov': 'Q4', 'Dez': 'Q4' };
+  // For year 1 starting Mar/26: Mar=Q1, Abr-Jun=Q2, Jul-Set=Q3, Out-Dez=Q4
+  // Actually Q1=Jan-Mar, Q2=Apr-Jun, Q3=Jul-Sep, Q4=Oct-Dec (calendar quarters)
+  const labels = [];
+  let lastQ = '';
+  months.forEach(m => {
+    const [mon, yr] = m.split('/');
+    const q = monthToQ[mon] + '/' + yr;
+    if (q !== lastQ) {
+      labels.push(q);
+      lastQ = q;
+    } else {
+      labels.push('');
+    }
+  });
+  return labels;
+}
+
+// ===== CHART INSTANCES =====
+const gridColor = 'rgba(255,255,255,0.06)';
+Chart.defaults.color = '#8A8F98';
+Chart.defaults.font.family = "'Inter', sans-serif";
+
+const quarterTickOpts = {
+  maxRotation: 0, font: { size: 10 }, maxTicksLimit: 16,
+  callback: function(value, index) {
+    const label = this.getLabelForValue(index);
+    return label || null;
+  }
+};
+
+const chartGGR = new Chart($('chartGGR'), {
+  type: 'line',
+  data: { labels: [], datasets: [{ label: 'GGR Mensal (R$M)', data: [], borderColor: '#9B51E0', backgroundColor: 'rgba(155,81,224,0.1)', fill: true, tension: 0.4, pointRadius: 0, borderWidth: 2.5 }] },
+  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { color: gridColor }, ticks: quarterTickOpts }, y: { grid: { color: gridColor }, ticks: { callback: v => 'R$' + v.toFixed(0) + 'M' } } } }
+});
+
+const chartFee = new Chart($('chartFee'), {
+  type: 'line',
+  data: { labels: [], datasets: [
+    { label: 'Option 1', data: [], borderColor: '#9B51E0', backgroundColor: 'rgba(155,81,224,0.08)', fill: true, tension: 0.4, pointRadius: 0, borderWidth: 2 },
+    { label: 'Option 2', data: [], borderColor: '#0693E3', backgroundColor: 'rgba(6,147,227,0.08)', fill: true, tension: 0.4, pointRadius: 0, borderWidth: 2 },
+    { label: 'Option 3', data: [], borderColor: '#FF6900', backgroundColor: 'rgba(255,105,0,0.08)', fill: true, tension: 0.4, pointRadius: 0, borderWidth: 2 }
+  ] },
+  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { usePointStyle: true, pointStyle: 'circle', padding: 16 } } }, scales: { x: { grid: { color: gridColor }, ticks: quarterTickOpts }, y: { grid: { color: gridColor }, ticks: { callback: v => 'R$' + v.toFixed(0) + 'M' } } } }
+});
+
+const chartWaiver = new Chart($('chartWaiver'), {
+  type: 'line',
+  data: { labels: [], datasets: [
+    { label: 'Option 1', data: [], borderColor: '#00D084', backgroundColor: 'rgba(0,208,132,0.08)', fill: true, tension: 0.4, pointRadius: 0, borderWidth: 2 },
+    { label: 'Option 2', data: [], borderColor: '#FCB900', backgroundColor: 'rgba(252,185,0,0.08)', fill: true, tension: 0.4, pointRadius: 0, borderWidth: 2 },
+    { label: 'Option 3', data: [], borderColor: '#FF6900', backgroundColor: 'rgba(255,105,0,0.08)', fill: true, tension: 0.4, pointRadius: 0, borderWidth: 2 },
+    { label: 'Meta Waiver', data: [], borderColor: 'rgba(207,46,46,0.5)', borderDash: [8,4], pointRadius: 0, borderWidth: 1.5, fill: false }
+  ] },
+  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { usePointStyle: true, pointStyle: 'circle', padding: 16 } } }, scales: { x: { grid: { color: gridColor }, ticks: quarterTickOpts }, y: { grid: { color: gridColor }, ticks: { callback: v => 'R$' + v.toFixed(0) + 'M' } } } }
+});
+
+// ===== TAB SWITCHING =====
+function switchTab(tab, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  $('tab-' + tab).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ===== CORE: RECALCULATE =====
+function recalculate() {
+  const P = {
+    ggrIni:  parseFloat(sliders.ggrIni.el.value),
+    ggrMeta: parseFloat(sliders.ggrMeta.el.value),
+    grow2:   parseFloat(sliders.grow2.el.value) / 100,
+    grow3:   parseFloat(sliders.grow3.el.value) / 100,
+    grow4:   parseFloat(sliders.grow4.el.value) / 100,
+    fee:     parseFloat(sliders.fee.el.value) / 100,
+    waiver:  parseFloat(sliders.waiver.el.value),
+    meta1:   parseFloat(sliders.meta1.el.value),
+    meta2:   parseFloat(sliders.meta2.el.value),
+    meta3:   parseFloat(sliders.meta3.el.value),
+    meta4:   parseFloat(sliders.meta4.el.value),
+  };
+
+  // --- Generate GGR ---
+  const months = [], ggr = [];
+  const m1 = ['Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  const m2 = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+
+  // Ano 1: exponential ramp
+  for (let i = 0; i < 10; i++) {
+    months.push(m1[i] + '/26');
+    ggr.push(P.ggrIni * Math.pow(P.ggrMeta / P.ggrIni, i / 9));
+  }
+  // Ano 2
+  const b2 = ggr[ggr.length - 1];
+  for (let i = 0; i < 12; i++) {
+    months.push(m2[i] + '/27');
+    ggr.push(b2 * Math.pow(1 + P.grow2, (i + 1) / 12));
+  }
+  // Ano 3
+  const b3 = ggr[ggr.length - 1];
+  for (let i = 0; i < 12; i++) {
+    months.push(m2[i] + '/28');
+    ggr.push(b3 * Math.pow(1 + P.grow3, (i + 1) / 12));
+  }
+  // Ano 4
+  const b4 = ggr[ggr.length - 1];
+  for (let i = 0; i < 11; i++) {
+    months.push(m2[i] + '/29');
+    ggr.push(b4 * Math.pow(1 + P.grow4, (i + 1) / 11));
+  }
+
+  const ggrTotal = ggr.reduce((a, b) => a + b, 0);
+  const feePotTotal = ggrTotal * P.fee;
+
+  // Quarter labels for charts
+  const qLabels = buildQuarterLabels(months);
+
+  // --- Option 1: Waiver per Period (configurable % per year) ---
+  const c1_yearPcts = [
+    parseFloat(sliders.opt1y1.el.value) / 100,
+    parseFloat(sliders.opt1y2.el.value) / 100,
+    parseFloat(sliders.opt1y3.el.value) / 100,
+    parseFloat(sliders.opt1y4.el.value) / 100,
+  ];
+  const c1_yearCaps = c1_yearPcts.map(p => P.waiver * p);
+  const c1_annualCap = P.waiver / 4; // for display reference
+  let c1_waiverUsed = 0, c1_feeAcc = [], c1_waiverAcc = [];
+  let c1_accFee = 0;
+  const yearStarts = [0, 10, 22, 34];
+  let c1_yearWaiver = 0, c1_yearIdx = 0;
+  for (let i = 0; i < ggr.length; i++) {
+    if (c1_yearIdx < yearStarts.length - 1 && i >= yearStarts[c1_yearIdx + 1]) {
+      c1_yearIdx++;
+      c1_yearWaiver = 0;
+    }
+    const potFee = ggr[i] * P.fee;
+    const annualRemaining = c1_yearCaps[c1_yearIdx] - c1_yearWaiver;
+    if (annualRemaining > 0) {
+      const use = Math.min(potFee, annualRemaining);
+      c1_yearWaiver += use;
+      c1_waiverUsed += use;
+      c1_accFee += (potFee - use);
+    } else {
+      c1_accFee += potFee;
+    }
+    c1_feeAcc.push(c1_accFee);
+    c1_waiverAcc.push(c1_waiverUsed);
+  }
+  const c1_totalFee = c1_accFee;
+
+  // --- Option 2: Fee Ramp-up (configurable fee per quarter, then fee cheio after waiver) ---
+  // 8 quarters of configurable rates, then fee cheio once waiver exhausted
+  const c2_qRates = [
+    parseFloat(sliders.opt2q1.el.value),
+    parseFloat(sliders.opt2q2.el.value),
+    parseFloat(sliders.opt2q3.el.value),
+    parseFloat(sliders.opt2q4.el.value),
+    parseFloat(sliders.opt2q5.el.value),
+    parseFloat(sliders.opt2q6.el.value),
+    parseFloat(sliders.opt2q7.el.value),
+    parseFloat(sliders.opt2q8.el.value),
+  ]; // in %
+
+  // Map month index to quarter index (0-based)
+  // Year 1: months 0-9 (Mar-Dec/26) → Q0(Mar-May)=0-2, Q1(Jun-Aug)=3-5, Q2(Sep-Nov)=6-8, Q3(Dec)=9
+  // Year 2: months 10-21 (Jan-Dec/27) → Q4(Jan-Mar)=10-12, Q5(Apr-Jun)=13-15, Q6(Jul-Sep)=16-18, Q7(Oct-Dec)=19-21
+  function monthToQuarterIdx(mi) {
+    if (mi < 3) return 0;   // Mar-May/26
+    if (mi < 6) return 1;   // Jun-Aug/26
+    if (mi < 9) return 2;   // Sep-Nov/26
+    if (mi < 13) return 3;  // Dec/26 + Jan-Mar/27
+    if (mi < 16) return 4;  // Apr-Jun/27
+    if (mi < 19) return 5;  // Jul-Sep/27
+    if (mi < 22) return 6;  // Oct-Dec/27
+    return 7;                // Jan+/28 (Q8 = last configured quarter)
+  }
+
+  let c2_accFee = 0, c2_feeAcc = [], c2_waiverAcc = [], c2_discTotal = 0;
+  let c2_waiverHit = false;
+  for (let i = 0; i < ggr.length; i++) {
+    const qi = monthToQuarterIdx(i);
+    let ratePercent;
+    if (c2_waiverHit) {
+      ratePercent = P.fee * 100;
+    } else if (qi < 8) {
+      ratePercent = c2_qRates[qi];
+    } else {
+      ratePercent = c2_qRates[7]; // last configured rate until waiver hit
+    }
+    const rate = ratePercent / 100;
+    const disc = ggr[i] * (P.fee - rate);
+    if (disc > 0 && !c2_waiverHit) {
+      c2_discTotal += disc;
+      if (c2_discTotal >= P.waiver) {
+        const overshoot = c2_discTotal - P.waiver;
+        c2_discTotal = P.waiver;
+        c2_accFee += ggr[i] * rate + overshoot;
+        c2_waiverHit = true;
+      } else {
+        c2_accFee += ggr[i] * rate;
+      }
+    } else {
+      c2_accFee += ggr[i] * P.fee;
+    }
+    c2_feeAcc.push(c2_accFee);
+    c2_waiverAcc.push(c2_discTotal);
+  }
+  const c2_totalFee = c2_accFee;
+  let c2_waiverMonth = ggr.length;
+  for (let i = 0; i < c2_waiverAcc.length; i++) {
+    if (c2_waiverAcc[i] >= P.waiver) { c2_waiverMonth = i + 1; break; }
+  }
+
+  // --- Option 3: Accumulated GGR (metas de GGR acumulado desbloqueiam waiver) ---
+  const c3_metas = [P.meta1, P.meta2, P.meta3, P.meta4];
+  const c3_tranche = P.waiver / 4;
+  let c3_unlocked = 0, c3_waiverPool = 0, c3_waiverUsed = 0;
+  let c3_accFee = 0, c3_feeAcc = [], c3_waiverAcc = [];
+  let c3_ggrAcc = 0;
+  let c3_unlockMonths = []; // which month each tranche was unlocked
+  for (let i = 0; i < ggr.length; i++) {
+    c3_ggrAcc += ggr[i];
+    // Check milestones
+    while (c3_unlocked < 4 && c3_ggrAcc >= c3_metas[c3_unlocked]) {
+      c3_unlocked++;
+      c3_waiverPool += c3_tranche;
+      c3_unlockMonths.push(i);
+    }
+    const potFee = ggr[i] * P.fee;
+    const poolRemaining = c3_waiverPool - c3_waiverUsed;
+    if (poolRemaining > 0) {
+      const use = Math.min(potFee, poolRemaining);
+      c3_waiverUsed += use;
+      c3_accFee += (potFee - use);
+    } else {
+      c3_accFee += potFee;
+    }
+    c3_feeAcc.push(c3_accFee);
+    c3_waiverAcc.push(c3_waiverUsed);
+  }
+  const c3_totalFee = c3_accFee;
+
+  // --- KPIs ---
+  const fmtM = v => v >= 1000 ? 'R$' + (v/1000).toFixed(1) + 'B' : 'R$' + v.toFixed(0) + 'M';
+  $('kpi-ggr').textContent = fmtM(ggrTotal);
+  $('kpi-fee').textContent = fmtM(feePotTotal);
+  $('kpi-fee-sub').textContent = T('kpiFeeSub').replace('{fee}', (P.fee*100).toFixed(1));
+  $('kpi-waiver').textContent = 'R$' + P.waiver + 'M';
+  const wPct = feePotTotal > 0 ? (P.waiver / feePotTotal * 100).toFixed(1) : 0;
+  $('kpi-waiver-pct').textContent = T('kpiWaiverPct').replace('{pct}', wPct);
+
+  // Payback equiv (months until fee accumulated covers waiver — using Option 1)
+  let paybackEq = '45+';
+  for (let i = 0; i < c1_feeAcc.length; i++) {
+    if (c1_feeAcc[i] >= P.waiver) { paybackEq = (i + 1).toString(); break; }
+  }
+  $('kpi-payback').textContent = paybackEq;
+  $('kpi-payback-sub').textContent = paybackEq === '45+' ? T('kpiPaybackNotRecover') : T('kpiPaybackMonths');
+
+  // --- INFOGRAPHIC OPTIONS CARDS (dynamic) ---
+  // Mini bar heights — all use 4 bars, max 20px
+  const maxPct = Math.max(...c1_yearPcts, 0.01);
+  const maxRate = Math.max(...c2_qRates, 0.01);
+  $('info-options-cards').innerHTML = `
+    <div class="info-scenario-card opt1">
+      <div class="info-scenario-tag">Option 1 — Waiver per Period</div>
+      <div class="info-scenario-title">${T('infoOpt1Title')} (${c1_yearPcts.map(p=>Math.round(p*100)+'%').join('/')})</div>
+      <div class="info-scenario-desc">R$${P.waiver}M: ${c1_yearCaps.map((c,i)=>'R$'+c.toFixed(0)+'M ('+(2026+i)+')').join(', ')}.</div>
+      <div class="info-scenario-visual">
+        ${c1_yearPcts.map(p => `<div class="info-bar" style="height:${Math.max(3, p/maxPct*20)}px;background:var(--accent-purple);"></div>`).join('')}
+      </div>
+      <div class="info-label-row">
+        ${c1_yearCaps.map((c,i) => `<span>${2026+i}: R$${c.toFixed(0)}M</span>`).join('')}
+      </div>
+    </div>
+    <div class="info-scenario-card opt2">
+      <div class="info-scenario-tag">Option 2 — Fee Ramp-up</div>
+      <div class="info-scenario-title">${c2_qRates[0]}% → ${c2_qRates[7]}% (${T('quarters')})</div>
+      <div class="info-scenario-desc">${T('infoOpt2Desc').replace('{fee}', (P.fee*100).toFixed(1))}</div>
+      <div class="info-scenario-visual">
+        ${c2_qRates.slice(0,4).map(r => `<div class="info-bar" style="height:${Math.max(3, r/maxRate*20)}px;background:var(--accent-amber);"></div>`).join('')}
+      </div>
+      <div class="info-label-row">
+        ${c2_qRates.slice(0,4).map((r,i) => `<span>Q${i+1}: ${r}%</span>`).join('')}
+      </div>
+    </div>
+    <div class="info-scenario-card opt3">
+      <div class="info-scenario-tag">Option 3 — Accumulated GGR</div>
+      <div class="info-scenario-title">${T('infoOpt3Title')}</div>
+      <div class="info-scenario-desc">${T('infoOpt3Desc').replace('{tranche}', c3_tranche.toFixed(0))}</div>
+      <div class="info-scenario-visual">
+        <div class="info-bar" style="height:5px;background:var(--accent-orange);"></div>
+        <div class="info-bar" style="height:10px;background:var(--accent-orange);"></div>
+        <div class="info-bar" style="height:15px;background:var(--accent-orange);"></div>
+        <div class="info-bar" style="height:20px;background:var(--accent-orange);"></div>
+      </div>
+      <div class="info-label-row">
+        <span>R$${P.meta1}M</span><span>R$${P.meta2}M</span><span>R$${P.meta3}M</span><span>R$${P.meta4}M</span>
+      </div>
+    </div>
+  `;
+
+  // --- COMPARISON TABLE ---
+  $('tbl-body').innerHTML = `
+    <tr><td>${T('tblMechanism')}</td><td>${c1_yearPcts.map((p,i) => Math.round(p*100)+'%').join('/')} ${T('tblWaiverPerYear')}</td><td>${T('tblFeeRamp')} ${c2_qRates[0]}% → ${c2_qRates[7]}% (${T('tbl8Q')})</td><td>${T('tbl4GoalsGGR')}</td></tr>
+    <tr><td>${T('tblWaiverUsed')}</td>
+      <td class="mono">R$${c1_waiverUsed.toFixed(1)}M <span class="badge ${c1_waiverUsed >= P.waiver*0.9 ? 'green' : 'amber'}">${(c1_waiverUsed/P.waiver*100).toFixed(0)}%</span></td>
+      <td class="mono">R$${c2_discTotal.toFixed(1)}M <span class="badge ${c2_discTotal >= P.waiver*0.9 ? 'green' : c2_discTotal >= P.waiver*0.5 ? 'amber' : 'red'}">${(c2_discTotal/P.waiver*100).toFixed(0)}%</span></td>
+      <td class="mono">R$${c3_waiverUsed.toFixed(1)}M <span class="badge ${c3_waiverUsed >= P.waiver*0.9 ? 'green' : c3_waiverUsed >= P.waiver*0.5 ? 'amber' : 'red'}">${(c3_waiverUsed/P.waiver*100).toFixed(0)}%</span></td>
+    </tr>
+    <tr class="highlight"><td>${T('tblPlatformRevenue')}</td>
+      <td class="mono" style="color:var(--accent-green)">${fmtM(c1_totalFee)}</td>
+      <td class="mono" style="color:var(--accent-green)">${fmtM(c2_totalFee)}</td>
+      <td class="mono" style="color:var(--accent-green)">${fmtM(c3_totalFee)}</td>
+    </tr>
+    <tr class="highlight"><td>${T('tblOperatorAttract')}</td>
+      <td><span class="badge green">${T('badgeHigh')}</span></td>
+      <td><span class="badge amber">${T('badgeMedium')}</span></td>
+      <td><span class="badge amber">${T('badgeMediumHigh')}</span></td>
+    </tr>
+    <tr><td>${T('tblPlatformAttract')}</td>
+      <td><span class="badge amber">${T('badgeMedium')}</span></td>
+      <td><span class="badge green">${T('badgeHigh')}</span></td>
+      <td><span class="badge green">${T('badgeHigh')}</span></td>
+    </tr>
+    <tr><td>${T('tblWaiverExhausted')}</td>
+      <td class="mono">—</td>
+      <td class="mono" style="color:var(--accent-amber)">${T('tblMonth')} ${c2_waiverMonth}</td>
+      <td class="mono" style="color:var(--accent-orange)">${c3_unlocked}/4 ${T('tblGoals')}</td>
+    </tr>
+  `;
+
+  // --- PROGRESS BARS (3 cards) ---
+  const w1pct = P.waiver > 0 ? Math.min(100, c1_waiverUsed / P.waiver * 100) : 0;
+  const w2pct = P.waiver > 0 ? Math.min(100, c2_discTotal / P.waiver * 100) : 0;
+  const w3pct = P.waiver > 0 ? Math.min(100, c3_waiverUsed / P.waiver * 100) : 0;
+  const r1pct = feePotTotal > 0 ? (c1_totalFee / feePotTotal * 100) : 0;
+  const r2pct = feePotTotal > 0 ? (c2_totalFee / feePotTotal * 100) : 0;
+  const r3pct = feePotTotal > 0 ? (c3_totalFee / feePotTotal * 100) : 0;
+
+  function makeProgressCard(title, color, gradient, waiverLabel, waiverVal, waiverMax, wPct, feeVal, rPct, extraRows) {
+    return `<div class="option-progress-card">
+      <div class="top-bar" style="background:${gradient};"></div>
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:${color};margin-bottom:12px;">${title}</div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;"><span style="color:var(--text-muted)">${waiverLabel}</span><span style="font-family:var(--font-mono);font-weight:600;color:var(--text-primary)">R$${waiverVal}M / R$${waiverMax}M</span></div><div style="height:6px;background:var(--bg-primary);border-radius:3px;overflow:hidden;"><div style="height:100%;width:${wPct}%;background:${gradient};border-radius:3px;transition:width 0.6s;"></div></div></div>
+        <div><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;"><span style="color:var(--text-muted)">${T('progressPlatformRevenue')}</span><span style="font-family:var(--font-mono);font-weight:600;color:var(--accent-green)">${feeVal}</span></div><div style="height:6px;background:var(--bg-primary);border-radius:3px;overflow:hidden;"><div style="height:100%;width:${rPct}%;background:var(--gradient-neon);border-radius:3px;transition:width 0.6s;"></div></div></div>
+        ${extraRows}
+      </div>
+    </div>`;
+  }
+
+  $('progress-bars').innerHTML = `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-top:20px;">
+    ${makeProgressCard('Option 1 — Waiver per Period', 'var(--accent-purple)', 'var(--gradient-cta)', T('progressWaiverUsed'),
+      Math.min(c1_waiverUsed,P.waiver).toFixed(1), P.waiver, w1pct, fmtM(c1_totalFee), r1pct,
+      `<div style="display:flex;justify-content:space-between;font-size:12px;padding-top:6px;border-top:1px solid var(--border-subtle);"><span style="color:var(--text-muted)">${T('progressAnnualCap')}</span><span style="font-family:var(--font-mono);font-weight:600;color:var(--accent-amber)">R$${c1_annualCap.toFixed(0)}M/${currentLang==='en'?'yr':'ano'}</span></div>`
+    )}
+    ${makeProgressCard('Option 2 — Fee Ramp-up', 'var(--accent-amber)', 'var(--gradient-fire)', T('progressDiscountAcc'),
+      c2_discTotal.toFixed(1), P.waiver, w2pct, fmtM(c2_totalFee), r2pct,
+      `<div style="display:flex;justify-content:space-between;font-size:12px;padding-top:6px;border-top:1px solid var(--border-subtle);"><span style="color:var(--text-muted)">${T('progressRevenueDay1')}</span><span class="badge green">${T('badgeYes')}</span></div>`
+    )}
+    ${makeProgressCard('Option 3 — Accumulated GGR', 'var(--accent-orange)', 'linear-gradient(135deg, #FF6900, #CF2E2E)', T('progressWaiverUnlocked'),
+      c3_waiverUsed.toFixed(1), P.waiver, w3pct, fmtM(c3_totalFee), r3pct,
+      `<div style="display:flex;justify-content:space-between;font-size:12px;padding-top:6px;border-top:1px solid var(--border-subtle);"><span style="color:var(--text-muted)">${T('progressGoalsReached')}</span><span style="font-family:var(--font-mono);font-weight:600;color:var(--accent-orange)">${c3_unlocked}/4</span></div>`
+    )}
+  </div>`;
+
+  // --- OPTION 1 DETAIL ---
+  const yrLabel = currentLang === 'en' ? 'Year' : 'Ano';
+  $('opt1-stats').innerHTML = `
+    <h3>Waiver per Period <span class="badge purple">Option 1</span></h3>
+    <div class="cenario-stat"><span class="cenario-stat-label">${yrLabel} 1 (2026)</span><span class="cenario-stat-value" style="color:var(--accent-amber)">R$${c1_yearCaps[0].toFixed(0)}M (${Math.round(c1_yearPcts[0]*100)}%)</span></div>
+    <div class="cenario-stat"><span class="cenario-stat-label">${yrLabel} 2 (2027)</span><span class="cenario-stat-value" style="color:var(--accent-amber)">R$${c1_yearCaps[1].toFixed(0)}M (${Math.round(c1_yearPcts[1]*100)}%)</span></div>
+    <div class="cenario-stat"><span class="cenario-stat-label">${yrLabel} 3 (2028)</span><span class="cenario-stat-value" style="color:var(--accent-amber)">R$${c1_yearCaps[2].toFixed(0)}M (${Math.round(c1_yearPcts[2]*100)}%)</span></div>
+    <div class="cenario-stat"><span class="cenario-stat-label">${yrLabel} 4 (2029)</span><span class="cenario-stat-value" style="color:var(--accent-amber)">R$${c1_yearCaps[3].toFixed(0)}M (${Math.round(c1_yearPcts[3]*100)}%)</span></div>
+    <div class="cenario-stat"><span class="cenario-stat-label">${T('opt1FeeBase')}</span><span class="cenario-stat-value">${(P.fee*100).toFixed(1)}%</span></div>
+    <div class="cenario-stat"><span class="cenario-stat-label">${T('opt1WaiverTotalUsed')}</span><span class="cenario-stat-value" style="color:var(--accent-green)">R$${c1_waiverUsed.toFixed(1)}M</span></div>
+    <div class="cenario-stat"><span class="cenario-stat-label">${T('opt1PlatformRevenue')}</span><span class="cenario-stat-value" style="color:var(--accent-green)">${fmtM(c1_totalFee)}</span></div>
+  `;
+  const opt1YearCapsStr = c1_yearCaps.map((c,i) => `<strong style="color:var(--accent-purple)">R$${c.toFixed(0)}M</strong> (${2026+i})`).join(', ');
+  $('opt1-info').innerHTML = `
+    <h3>${T('opt1HowTitle')}</h3>
+    <p style="color:var(--text-muted);font-size:13px;line-height:1.7;">${T('opt1HowDesc').replace('R${waiver}M', 'R$'+P.waiver+'M').replace('{yearCaps}', opt1YearCapsStr)}</p>
+    <div class="callout" style="border-left:3px solid var(--accent-green);">
+      <p class="callout-title" style="color:var(--accent-green);">${T('opt1AdvOperator')}</p>
+      <p class="callout-text">${T('opt1AdvOperatorDesc')}</p>
+    </div>
+    <div class="callout" style="border-left:3px solid var(--accent-green);">
+      <p class="callout-title" style="color:var(--accent-green);">${T('opt1AdvPlatform')}</p>
+      <p class="callout-text">${T('opt1AdvPlatformDesc')}</p>
+    </div>
+  `;
+
+  // --- OPTION 2 DETAIL ---
+  $('opt2-stats').innerHTML = `
+    <h3>Fee Ramp-up <span class="badge blue">Option 2</span></h3>
+    <div class="cenario-stat"><span class="cenario-stat-label">Q1 → Q4 (${yrLabel} 1)</span><span class="cenario-stat-value">${c2_qRates.slice(0,4).map(r=>r+'%').join(' → ')}</span></div>
+    <div class="cenario-stat"><span class="cenario-stat-label">Q5 → Q8 (${yrLabel} 2)</span><span class="cenario-stat-value">${c2_qRates.slice(4,8).map(r=>r+'%').join(' → ')}</span></div>
+    <div class="cenario-stat"><span class="cenario-stat-label">${T('opt2WaiverExhausted')}</span><span class="cenario-stat-value" style="color:var(--accent-amber)">${T('tblMonth')} ${c2_waiverMonth}</span></div>
+    <div class="cenario-stat"><span class="cenario-stat-label">${T('opt2PostWaiver')}</span><span class="cenario-stat-value" style="color:var(--accent-purple)">${(P.fee*100).toFixed(1)}% ${T('opt2FullFee')}</span></div>
+    <div class="cenario-stat"><span class="cenario-stat-label">${T('opt2DiscountAcc')}</span><span class="cenario-stat-value" style="color:var(--accent-green)">R$${c2_discTotal.toFixed(1)}M</span></div>
+    <div class="cenario-stat"><span class="cenario-stat-label">${T('opt2TotalRevenue')}</span><span class="cenario-stat-value" style="color:var(--accent-green)">${fmtM(c2_totalFee)}</span></div>
+  `;
+  $('opt2-info').innerHTML = `
+    <h3>${T('opt1HowTitle')}</h3>
+    <p style="color:var(--text-muted);font-size:13px;line-height:1.7;">${T('opt2HowDesc').replace('{startRate}', c2_qRates[0]).replace('R${waiver}M', 'R$'+P.waiver+'M').replace('{fee}', (P.fee*100).toFixed(1))}</p>
+    <div class="callout" style="border-left:3px solid var(--accent-blue);">
+      <p class="callout-title" style="color:var(--accent-blue);">${T('opt2WaiverExhaustedCallout')}</p>
+      <p class="callout-text">${T('opt2WaiverExhaustedDesc').replace('R${waiver}M', 'R$'+P.waiver+'M').replace('{month}', c2_waiverMonth)}</p>
+    </div>
+    <div class="callout" style="border-left:3px solid var(--accent-green);">
+      <p class="callout-title" style="color:var(--accent-green);">${T('opt2AdvPlatform')}</p>
+      <p class="callout-text">${T('opt2AdvPlatformDesc').replace('{revenue}', fmtM(c2_totalFee))}</p>
+    </div>
+  `;
+
+  // --- OPTION 3 DETAIL ---
+  const unlockInfo = c3_unlockMonths.map((m, i) => `${T('opt3GoalLabel')} ${i+1} (R$${c3_metas[i]}M): ${T('opt3MonthLabel')} ${m+1} → ${months[m]}`).join('<br>');
+  $('opt3-stats').innerHTML = `
+    <h3>Accumulated GGR <span class="badge orange">Option 3</span></h3>
+    <div class="cenario-stat"><span class="cenario-stat-label">${T('opt3GoalLabel')} 1</span><span class="cenario-stat-value" style="color:${c3_unlocked>=1?'var(--accent-green)':'var(--text-disabled)'}">R$${P.meta1}M ${c3_unlocked>=1?'✓':''}</span></div>
+    <div class="cenario-stat"><span class="cenario-stat-label">${T('opt3GoalLabel')} 2</span><span class="cenario-stat-value" style="color:${c3_unlocked>=2?'var(--accent-green)':'var(--text-disabled)'}">R$${P.meta2}M ${c3_unlocked>=2?'✓':''}</span></div>
+    <div class="cenario-stat"><span class="cenario-stat-label">${T('opt3GoalLabel')} 3</span><span class="cenario-stat-value" style="color:${c3_unlocked>=3?'var(--accent-green)':'var(--text-disabled)'}">R$${P.meta3}M ${c3_unlocked>=3?'✓':''}</span></div>
+    <div class="cenario-stat"><span class="cenario-stat-label">${T('opt3GoalLabel')} 4</span><span class="cenario-stat-value" style="color:${c3_unlocked>=4?'var(--accent-green)':'var(--text-disabled)'}">R$${P.meta4}M ${c3_unlocked>=4?'✓':''}</span></div>
+    <div class="cenario-stat"><span class="cenario-stat-label">${T('opt3WaiverUnlocked')}</span><span class="cenario-stat-value" style="color:var(--accent-orange)">R$${c3_waiverUsed.toFixed(1)}M</span></div>
+    <div class="cenario-stat"><span class="cenario-stat-label">${T('opt3PlatformRevenue')}</span><span class="cenario-stat-value" style="color:var(--accent-green)">${fmtM(c3_totalFee)}</span></div>
+  `;
+  $('opt3-info').innerHTML = `
+    <h3>${T('opt1HowTitle')}</h3>
+    <p style="color:var(--text-muted);font-size:13px;line-height:1.7;">${T('opt3HowDesc').replace('R${waiver}M', 'R$'+P.waiver+'M').replace('R${tranche}M', 'R$'+c3_tranche.toFixed(0)+'M')}</p>
+    ${unlockInfo ? `<div class="callout" style="border-left:3px solid var(--accent-orange);"><p class="callout-title" style="color:var(--accent-orange);">${T('opt3GoalsReached')}</p><p class="callout-text">${unlockInfo}</p></div>` : ''}
+    <div class="callout" style="border-left:3px solid var(--accent-green);">
+      <p class="callout-title" style="color:var(--accent-green);">${T('opt3AdvPlatform')}</p>
+      <p class="callout-text">${T('opt3AdvPlatformDesc')}</p>
+    </div>
+    <div class="callout" style="border-left:3px solid var(--accent-blue);">
+      <p class="callout-title" style="color:var(--accent-blue);">${T('opt3AdvOperator')}</p>
+      <p class="callout-text">${T('opt3AdvOperatorDesc')}</p>
+    </div>
+  `;
+
+  // --- CHARTS UPDATE ---
+  chartGGR.data.labels = qLabels;
+  chartGGR.data.datasets[0].data = ggr;
+  chartGGR.update('none');
+
+  chartFee.data.labels = qLabels;
+  chartFee.data.datasets[0].data = c1_feeAcc;
+  chartFee.data.datasets[1].data = c2_feeAcc;
+  chartFee.data.datasets[2].data = c3_feeAcc;
+  chartFee.update('none');
+
+  chartWaiver.data.labels = qLabels;
+  chartWaiver.data.datasets[0].data = c1_waiverAcc;
+  chartWaiver.data.datasets[1].data = c2_waiverAcc;
+  chartWaiver.data.datasets[2].data = c3_waiverAcc;
+  chartWaiver.data.datasets[3].data = Array(months.length).fill(P.waiver);
+  chartWaiver.options.scales.y.max = Math.max(P.waiver * 1.3, 5);
+  chartWaiver.update('none');
+}
+
+// ===== SCENARIOS STORAGE =====
+const STORAGE_KEY = 'pam_scenarios';
+const COMPARE_COLORS = ['#9B51E0','#0693E3','#00D084','#FCB900','#FF6900','#CF2E2E','#f78da7','#7bdcb5'];
+
+function getScenarios() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+  catch { return []; }
+}
+function setScenarios(list) { localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); }
+
+function getCurrentParams() {
+  return {
+    ggrIni:  parseFloat(sliders.ggrIni.el.value),
+    ggrMeta: parseFloat(sliders.ggrMeta.el.value),
+    grow2:   parseFloat(sliders.grow2.el.value),
+    grow3:   parseFloat(sliders.grow3.el.value),
+    grow4:   parseFloat(sliders.grow4.el.value),
+    fee:     parseFloat(sliders.fee.el.value),
+    waiver:  parseFloat(sliders.waiver.el.value),
+    meta1:   parseFloat(sliders.meta1.el.value),
+    meta2:   parseFloat(sliders.meta2.el.value),
+    meta3:   parseFloat(sliders.meta3.el.value),
+    meta4:   parseFloat(sliders.meta4.el.value),
+    opt1y1:  parseFloat(sliders.opt1y1.el.value),
+    opt1y2:  parseFloat(sliders.opt1y2.el.value),
+    opt1y3:  parseFloat(sliders.opt1y3.el.value),
+    opt1y4:  parseFloat(sliders.opt1y4.el.value),
+    opt2q1:  parseFloat(sliders.opt2q1.el.value),
+    opt2q2:  parseFloat(sliders.opt2q2.el.value),
+    opt2q3:  parseFloat(sliders.opt2q3.el.value),
+    opt2q4:  parseFloat(sliders.opt2q4.el.value),
+    opt2q5:  parseFloat(sliders.opt2q5.el.value),
+    opt2q6:  parseFloat(sliders.opt2q6.el.value),
+    opt2q7:  parseFloat(sliders.opt2q7.el.value),
+    opt2q8:  parseFloat(sliders.opt2q8.el.value),
+  };
+}
+
+function computeScenarioResults(p) {
+  const P = { ...p, grow2: p.grow2/100, grow3: p.grow3/100, grow4: p.grow4/100, fee: p.fee/100 };
+  const months = [], ggr = [];
+  const m1 = ['Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  const m2 = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  for (let i = 0; i < 10; i++) { months.push(m1[i]+'/26'); ggr.push(P.ggrIni * Math.pow(P.ggrMeta/P.ggrIni, i/9)); }
+  const b2 = ggr[ggr.length-1];
+  for (let i = 0; i < 12; i++) { months.push(m2[i]+'/27'); ggr.push(b2 * Math.pow(1+P.grow2, (i+1)/12)); }
+  const b3 = ggr[ggr.length-1];
+  for (let i = 0; i < 12; i++) { months.push(m2[i]+'/28'); ggr.push(b3 * Math.pow(1+P.grow3, (i+1)/12)); }
+  const b4 = ggr[ggr.length-1];
+  for (let i = 0; i < 11; i++) { months.push(m2[i]+'/29'); ggr.push(b4 * Math.pow(1+P.grow4, (i+1)/11)); }
+
+  const ggrTotal = ggr.reduce((a,b) => a+b, 0);
+  const feePot = ggrTotal * P.fee;
+
+  // Option 1 — Waiver per Period (configurable % per year)
+  const c1yp = [(p.opt1y1||25)/100, (p.opt1y2||25)/100, (p.opt1y3||25)/100, (p.opt1y4||25)/100];
+  const c1caps = c1yp.map(pct => p.waiver * pct);
+  const ys = [0, 10, 22, 34];
+  let c1w = 0, c1f = 0, c1feeAcc = [], c1yw = 0, c1yi = 0;
+  for (let i = 0; i < ggr.length; i++) {
+    if (c1yi < ys.length - 1 && i >= ys[c1yi + 1]) { c1yi++; c1yw = 0; }
+    const pf = ggr[i]*P.fee;
+    const rem = c1caps[c1yi] - c1yw;
+    if (rem > 0) { const u = Math.min(pf, rem); c1yw += u; c1w += u; c1f += (pf - u); }
+    else { c1f += pf; }
+    c1feeAcc.push(c1f);
+  }
+
+  // Option 2 — Fee Ramp-up (configurable fee per quarter)
+  const c2qr = [p.opt2q1||0.25, p.opt2q2||0.40, p.opt2q3||0.60, p.opt2q4||0.80,
+                 p.opt2q5||1.00, p.opt2q6||1.00, p.opt2q7||1.00, p.opt2q8||1.00];
+  function mToQi(mi) {
+    if (mi<3) return 0; if (mi<6) return 1; if (mi<9) return 2; if (mi<13) return 3;
+    if (mi<16) return 4; if (mi<19) return 5; if (mi<22) return 6; return 7;
+  }
+  let c2f = 0, c2d = 0, c2feeAcc = [], c2wHit = false;
+  for (let i = 0; i < ggr.length; i++) {
+    const qi = mToQi(i);
+    let rp = c2wHit ? P.fee*100 : (qi < 8 ? c2qr[qi] : c2qr[7]);
+    const r = rp / 100;
+    const disc = ggr[i]*(P.fee - r);
+    if (disc > 0 && !c2wHit) {
+      c2d += disc;
+      if (c2d >= p.waiver) { const over = c2d - p.waiver; c2d = p.waiver; c2f += ggr[i]*r + over; c2wHit = true; }
+      else { c2f += ggr[i]*r; }
+    } else { c2f += ggr[i]*P.fee; }
+    c2feeAcc.push(c2f);
+  }
+
+  // Option 3 — Accumulated GGR
+  const metas = [p.meta1||50, p.meta2||150, p.meta3||350, p.meta4||700];
+  const tranche = p.waiver / 4;
+  let c3f = 0, c3w = 0, c3pool = 0, c3unlocked = 0, c3ggrAcc = 0, c3feeAcc = [];
+  for (let i = 0; i < ggr.length; i++) {
+    c3ggrAcc += ggr[i];
+    while (c3unlocked < 4 && c3ggrAcc >= metas[c3unlocked]) { c3unlocked++; c3pool += tranche; }
+    const pf = ggr[i]*P.fee;
+    const poolRem = c3pool - c3w;
+    if (poolRem > 0) { const u = Math.min(pf, poolRem); c3w += u; c3f += (pf - u); }
+    else { c3f += pf; }
+    c3feeAcc.push(c3f);
+  }
+
+  return { months, ggr, ggrTotal, feePot, c1Fee: c1f, c2Fee: c2f, c3Fee: c3f, c2Disc: c2d, c1feeAcc, c2feeAcc, c3feeAcc, c1WaiverCap: c1caps };
+}
+
+function saveScenario() {
+  const name = $('save-name').value.trim();
+  const author = $('save-author').value.trim();
+  if (!name) { $('save-name').style.borderColor = 'var(--accent-red)'; $('save-name').focus(); return; }
+  $('save-name').style.borderColor = '';
+  const rating = parseInt(document.querySelector('input[name="rating"]:checked')?.value || 3);
+  const params = getCurrentParams();
+  const results = computeScenarioResults(params);
+  const scenario = {
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2,6),
+    name, author: author || T('anonymous'),
+    date: new Date().toLocaleDateString(currentLang === 'en' ? 'en-US' : 'pt-BR'),
+    rating, params,
+    summary: {
+      ggrTotal: results.ggrTotal, feePot: results.feePot,
+      c1Fee: results.c1Fee, c2Fee: results.c2Fee, c3Fee: results.c3Fee,
+      c2Disc: results.c2Disc, c1WaiverCap: params.waiver / 4
+    }
+  };
+  // Option config snapshot
+  scenario.optionSnapshot = {
+    opt1: `Waiver/Ano: ${params.opt1y1}%/${params.opt1y2}%/${params.opt1y3}%/${params.opt1y4}%`,
+    opt2: `Fee/Q: ${params.opt2q1}/${params.opt2q2}/${params.opt2q3}/${params.opt2q4} → ${params.opt2q5}/${params.opt2q6}/${params.opt2q7}/${params.opt2q8}`,
+    opt3: `Metas GGR: R$${params.meta1}M / R$${params.meta2}M / R$${params.meta3}M / R$${params.meta4}M`
+  };
+  const list = getScenarios();
+  list.unshift(scenario);
+  setScenarios(list);
+  $('save-name').value = '';
+  renderScenarios();
+  showToast(`✓ ${T('toastSaved').replace('{name}', name)}`, 'var(--accent-green)');
+}
+
+function renderScenarios() {
+  const list = getScenarios();
+  const el = $('scenarios-list');
+  if (!list.length) {
+    el.innerHTML = `<div class="empty-state">${T('emptyScenarios')}</div>`;
+    return;
+  }
+  const fmtM = v => v >= 1000 ? 'R$'+(v/1000).toFixed(1)+'B' : 'R$'+v.toFixed(0)+'M';
+  const stars = n => '<span class="stars-display">' + '&#9733;'.repeat(n) + '<span style="color:var(--bg-muted)">' + '&#9733;'.repeat(5-n) + '</span></span>';
+  let html = `<table class="scenarios-table"><thead><tr>
+    <th style="width:30px;"><input type="checkbox" class="cb-compare" id="cb-all" onchange="toggleAllCompare(this)"></th>
+    <th>${T('thScenario')}</th><th>${T('thAuthor')}</th><th>${T('thDate')}</th><th>${T('thRating')}</th>
+    <th>${T('thGgrTotal')}</th><th>${T('thWaiver')}</th><th>${T('thActions')}</th>
+  </tr></thead><tbody>`;
+  list.forEach(s => {
+    html += `<tr>
+      <td><input type="checkbox" class="cb-compare" data-id="${s.id}" onchange="updateComparison()"></td>
+      <td><div style="font-weight:600;color:var(--text-primary);">${s.name}</div>${s.optionSnapshot ? `<div style="font-size:9px;color:var(--text-disabled);margin-top:2px;line-height:1.4;">Opt1: ${s.optionSnapshot.opt1}<br>Opt2: ${s.optionSnapshot.opt2}<br>Opt3: ${s.optionSnapshot.opt3}</div>` : ''}</td>
+      <td>${s.author}</td>
+      <td style="font-family:var(--font-mono);font-size:11px;">${s.date}</td>
+      <td>${stars(s.rating)}</td>
+      <td class="mono">${fmtM(s.summary.ggrTotal)}</td>
+      <td class="mono" style="color:var(--accent-amber);">R$${s.params.waiver}M</td>
+      <td><div class="scenario-actions">
+        <button class="btn-sm btn-load" onclick="loadScenario('${s.id}')">${T('btnLoad')}</button>
+        <button class="btn-sm btn-delete" onclick="requestDelete('${s.id}','${s.name.replace(/'/g,"\\'")}')">${T('btnDeleteSmall')}</button>
+      </div></td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  el.innerHTML = html;
+}
+
+function loadScenario(id) {
+  const list = getScenarios();
+  const s = list.find(x => x.id === id);
+  if (!s) return;
+  const map = { ggrIni:'sl-ggrIni', ggrMeta:'sl-ggrMeta', grow2:'sl-grow2', grow3:'sl-grow3', grow4:'sl-grow4', fee:'sl-fee', waiver:'sl-waiver', meta1:'sl-meta1', meta2:'sl-meta2', meta3:'sl-meta3', meta4:'sl-meta4', opt1y1:'sl-opt1y1', opt1y2:'sl-opt1y2', opt1y3:'sl-opt1y3', opt1y4:'sl-opt1y4', opt2q1:'sl-opt2q1', opt2q2:'sl-opt2q2', opt2q3:'sl-opt2q3', opt2q4:'sl-opt2q4', opt2q5:'sl-opt2q5', opt2q6:'sl-opt2q6', opt2q7:'sl-opt2q7', opt2q8:'sl-opt2q8' };
+  Object.entries(map).forEach(([key, slId]) => {
+    const el = $(slId);
+    if (s.params[key] !== undefined) {
+      el.value = s.params[key];
+      el.dispatchEvent(new Event('input'));
+    }
+  });
+  window.scrollTo({ top: $('simulador').offsetTop - 70, behavior: 'smooth' });
+  showToast(`✓ ${T('toastLoaded').replace('{name}', s.name)}`, 'var(--accent-blue)');
+}
+
+let deleteTarget = null;
+function requestDelete(id, name) {
+  deleteTarget = id;
+  $('modal-delete-msg').innerHTML = T('modalDeleteMsgNamed').replace('{name}', name);
+  $('modal-delete').classList.add('active');
+}
+function closeModal() { $('modal-delete').classList.remove('active'); deleteTarget = null; }
+function confirmDelete() {
+  if (!deleteTarget) return;
+  let list = getScenarios();
+  list = list.filter(s => s.id !== deleteTarget);
+  setScenarios(list);
+  closeModal();
+  renderScenarios();
+  updateComparison();
+}
+
+function toggleAllCompare(el) {
+  document.querySelectorAll('.cb-compare[data-id]').forEach(cb => { cb.checked = el.checked; });
+  updateComparison();
+}
+
+// ===== COMPARISON =====
+let chartCompareGGR = null, chartCompareRadar = null;
+
+function updateComparison() {
+  const checked = [...document.querySelectorAll('.cb-compare[data-id]:checked')].map(cb => cb.dataset.id);
+  const el = $('compare-content');
+  if (checked.length < 2) {
+    el.innerHTML = `<div class="empty-state">${T('cmpSelect2')}</div>`;
+    return;
+  }
+  const list = getScenarios();
+  const selected = checked.map(id => list.find(s => s.id === id)).filter(Boolean);
+  const fmtM = v => v >= 1000 ? 'R$'+(v/1000).toFixed(1)+'B' : 'R$'+v.toFixed(0)+'M';
+
+  // Mini cards
+  let cardsHtml = '<div class="compare-cards">';
+  selected.forEach((s, i) => {
+    const c = COMPARE_COLORS[i % COMPARE_COLORS.length];
+    cardsHtml += `<div class="compare-mini-card" style="border-top-color:${c}">
+      <h4>${s.name}</h4>
+      <div class="compare-mini-stat"><span>${T('thGgrTotal')}</span><span>${fmtM(s.summary.ggrTotal)}</span></div>
+      <div class="compare-mini-stat"><span>${T('thWaiver')}</span><span style="color:var(--accent-amber)">R$${s.params.waiver}M</span></div>
+      <div class="compare-mini-stat"><span>${T('feePotLabel')}</span><span>${fmtM(s.summary.feePot)}</span></div>
+      <div class="compare-mini-stat"><span>${T('revenueOpt1Label')}</span><span style="color:var(--accent-green)">${fmtM(s.summary.c1Fee)}</span></div>
+      <div class="compare-mini-stat"><span>${T('revenueOpt3Label')}</span><span style="color:var(--accent-orange)">${fmtM(s.summary.c3Fee || 0)}</span></div>
+      <div class="compare-mini-stat"><span>${T('ratingLabel')}</span><span class="stars-display">${'&#9733;'.repeat(s.rating)}</span></div>
+    </div>`;
+  });
+  cardsHtml += '</div>';
+
+  // Charts
+  let chartsHtml = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
+      <div class="chart-container"><h3>${T('cmpChartGGR')}</h3><div class="chart-wrapper"><canvas id="cmpChartGGR"></canvas></div></div>
+      <div class="chart-container"><h3>${T('cmpChartRadar')}</h3><div class="chart-wrapper"><canvas id="cmpChartRadar"></canvas></div></div>
+    </div>
+  `;
+
+  // Conclusion
+  const best = [...selected].sort((a,b) => b.summary.c1Fee - a.summary.c1Fee);
+  const bestS = best[0];
+  const worstS = best[best.length-1];
+  let conclusionHtml = `
+    <div class="chart-container" style="border-top:3px solid var(--accent-green)">
+      <h3>${T('cmpConclusionTitle')}</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:16px;">
+        <div class="callout" style="border-left:3px solid var(--accent-green);">
+          <p class="callout-title" style="color:var(--accent-green);">${T('cmpBestScenario')}: ${bestS.name}</p>
+          <p class="callout-text">${T('cmpRevenueOpt1')}: <strong style="color:var(--text-primary)">${fmtM(bestS.summary.c1Fee)}</strong>, ${T('cmpAnnualCap')} R$${(bestS.params.waiver/4).toFixed(0)}M. ${bestS.rating >= 4 ? T('cmpHighRating').replace('{stars}', bestS.rating) : ''}</p>
+        </div>
+        <div class="callout" style="border-left:3px solid var(--accent-amber);">
+          <p class="callout-title" style="color:var(--accent-amber);">${T('cmpWorstRevenue')}: ${worstS.name}</p>
+          <p class="callout-text">${T('cmpRevenueOpt1')}: <strong style="color:var(--text-primary)">${fmtM(worstS.summary.c1Fee)}</strong>, Waiver R$${worstS.params.waiver}M.</p>
+        </div>
+      </div>
+      <div style="margin-top:16px;">
+        <table class="comparison-table"><thead><tr><th>${T('thMetric')}</th>${selected.map((s,i) => `<th style="border-bottom:2px solid ${COMPARE_COLORS[i%COMPARE_COLORS.length]}">${s.name}</th>`).join('')}</tr></thead><tbody>
+          <tr><td>${T('cmpGgrInitial')}</td>${selected.map(s => `<td class="mono">R$${s.params.ggrIni}M</td>`).join('')}</tr>
+          <tr><td>${T('cmpGgrGoalY1')}</td>${selected.map(s => `<td class="mono">R$${s.params.ggrMeta}M</td>`).join('')}</tr>
+          <tr><td>${T('cmpGrowthA234')}</td>${selected.map(s => `<td class="mono">${s.params.grow2}%/${s.params.grow3}%/${s.params.grow4}%</td>`).join('')}</tr>
+          <tr><td>${T('cmpFeePAM')}</td>${selected.map(s => `<td class="mono">${s.params.fee}%</td>`).join('')}</tr>
+          <tr><td>${T('thWaiver')}</td>${selected.map(s => `<td class="mono" style="color:var(--accent-amber)">R$${s.params.waiver}M</td>`).join('')}</tr>
+          <tr class="highlight"><td>${T('thGgrTotal')}</td>${selected.map(s => `<td class="mono">${fmtM(s.summary.ggrTotal)}</td>`).join('')}</tr>
+          <tr class="highlight"><td>${T('cmpRevenueOpt1Table')}</td>${selected.map(s => `<td class="mono" style="color:var(--accent-green)">${fmtM(s.summary.c1Fee)}</td>`).join('')}</tr>
+          <tr class="highlight"><td>${T('cmpRevenueOpt3Table')}</td>${selected.map(s => `<td class="mono" style="color:var(--accent-orange)">${fmtM(s.summary.c3Fee || 0)}</td>`).join('')}</tr>
+        </tbody></table>
+      </div>
+    </div>
+  `;
+
+  el.innerHTML = cardsHtml + chartsHtml + conclusionHtml;
+
+  // Draw charts
+  const datasets = selected.map((s, i) => {
+    const r = computeScenarioResults(s.params);
+    return { label: s.name, data: r.ggr, borderColor: COMPARE_COLORS[i%COMPARE_COLORS.length], backgroundColor: 'transparent', tension: 0.4, pointRadius: 0, borderWidth: 2 };
+  });
+  const firstResult = computeScenarioResults(selected[0].params);
+  const labels = buildQuarterLabels(firstResult.months);
+
+  if (chartCompareGGR) chartCompareGGR.destroy();
+  chartCompareGGR = new Chart($('cmpChartGGR'), {
+    type: 'line',
+    data: { labels, datasets },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { usePointStyle: true, pointStyle: 'circle', padding: 12, font: { size: 11 } } } }, scales: { x: { grid: { color: gridColor }, ticks: quarterTickOpts }, y: { grid: { color: gridColor }, ticks: { callback: v => 'R$'+v.toFixed(0)+'M' } } } }
+  });
+
+  // Radar
+  if (chartCompareRadar) chartCompareRadar.destroy();
+  const radarDs = selected.map((s, i) => ({
+    label: s.name,
+    data: [
+      Math.min(100, s.summary.ggrTotal / 80),
+      Math.min(100, s.summary.c1Fee / (s.summary.feePot || 1) * 100),
+      Math.min(100, s.summary.c1Fee / (s.summary.feePot || 1) * 120),
+      s.rating * 20,
+    ],
+    borderColor: COMPARE_COLORS[i%COMPARE_COLORS.length],
+    backgroundColor: COMPARE_COLORS[i%COMPARE_COLORS.length] + '18',
+    pointBackgroundColor: COMPARE_COLORS[i%COMPARE_COLORS.length],
+    borderWidth: 2, pointRadius: 3,
+  }));
+  chartCompareRadar = new Chart($('cmpChartRadar'), {
+    type: 'radar',
+    data: { labels: [T('radarGgrScale'),T('radarRevenueMargin'),T('radarFeeEfficiency'),T('radarRating')], datasets: radarDs },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: { r: { beginAtZero: true, max: 100, grid: { color: gridColor }, angleLines: { color: gridColor }, ticks: { display: false }, pointLabels: { color: '#8A8F98', font: { size: 10 } } } },
+      plugins: { legend: { labels: { usePointStyle: true, pointStyle: 'circle', padding: 12, font: { size: 11 } } } }
+    }
+  });
+}
+
+// Seed default scenarios if none exist
+function seedDefaults() {
+  if (getScenarios().length > 0) return;
+  const base = {
+    ggrIni: 5, ggrMeta: 50, grow2: 100, grow3: 70, grow4: 25,
+    fee: 2, waiver: 20,
+    meta1: 50, meta2: 150, meta3: 350, meta4: 700,
+    opt1y1: 25, opt1y2: 25, opt1y3: 25, opt1y4: 25,
+    opt2q1: 0.25, opt2q2: 0.40, opt2q3: 0.60, opt2q4: 0.80,
+    opt2q5: 1.00, opt2q6: 1.00, opt2q7: 1.00, opt2q8: 1.00
+  };
+  const otimista = {
+    ...base,
+    ggrIni: 8, ggrMeta: 70, grow2: 130, grow3: 100, grow4: 50,
+    meta1: 80, meta2: 250, meta3: 500, meta4: 1000
+  };
+  const conservador = {
+    ...base,
+    ggrIni: 3, ggrMeta: 30, grow2: 60, grow3: 40, grow4: 15,
+    meta1: 30, meta2: 80, meta3: 180, meta4: 400
+  };
+  const mkScenario = (name, author, rating, params) => {
+    const results = computeScenarioResults(params);
+    return {
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2,6),
+      name, author, date: new Date().toLocaleDateString(currentLang === 'en' ? 'en-US' : 'pt-BR'),
+      rating, params,
+      summary: {
+        ggrTotal: results.ggrTotal, feePot: results.feePot,
+        c1Fee: results.c1Fee, c2Fee: results.c2Fee, c3Fee: results.c3Fee,
+        c2Disc: results.c2Disc, c1WaiverCap: params.waiver / 4
+      },
+      optionSnapshot: {
+        opt1: `Waiver/Ano: ${params.opt1y1}%/${params.opt1y2}%/${params.opt1y3}%/${params.opt1y4}%`,
+        opt2: `Fee/Q: ${params.opt2q1}/${params.opt2q2}/${params.opt2q3}/${params.opt2q4} → ${params.opt2q5}/${params.opt2q6}/${params.opt2q7}/${params.opt2q8}`,
+        opt3: `Metas GGR: R$${params.meta1}M / R$${params.meta2}M / R$${params.meta3}M / R$${params.meta4}M`
+      }
+    };
+  };
+  const list = [
+    mkScenario(T('seedBase'), T('seedAuthor'), 3, base),
+    mkScenario(T('seedOptimistic'), T('seedAuthor'), 4, otimista),
+    mkScenario(T('seedConservative'), T('seedAuthor'), 2, conservador)
+  ];
+  setScenarios(list);
+}
+seedDefaults();
+
+// Initial render — apply persisted language and render
+applyStaticI18n();
+document.documentElement.lang = currentLang === 'br' ? 'pt-BR' : 'en';
+recalculate();
+renderScenarios();
+</script>
+</body>
+</html>

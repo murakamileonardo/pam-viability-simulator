@@ -1,0 +1,110 @@
+========================================
+BACKUP DE PROMPTS — PAM Viabilidade
+========================================
+
+[2026-03-19 — Prompt 1]
+mais alguns ajustes, padronize o crescimento anual de 0 a 150% em todos os anos (os dials), o waiver total vamos deixar ser digitado, logo como primeiro parametro.
+
+As barras em si dos dials vamos tentar deixar mais bonitas. acho tambem que podemos agrupar o crescimento anual dos anos na vertical, para dar pra visualmente ver a diferenca de cada. tente algo assim para visualmente ficar mais harmonico sem complicar nada.
+
+remova o conceito de saúde por completo.
+
+Remova também o infografico de liberação de waiver. vamos também criar um cenário 3, onde temos 4 metas de GGR acumulado, em quatro degraus sem estipular o tempo. crie parametros de config adicionais se necessário.
+
+Ajuste o cenário 1 para ser dinamico e nao travado a 5M por ano mas sim o valor total do waiver dividido em 4 anos.
+
+Nomeie os cenarios adequadamente pela sua característica principal.
+
+Nos gráficos adeque os eixos Y para Semestres na nomenclatura de HALF_ano exemplo H1_2026 ou se achar que fica melhor, por quarter. Q1 q2 q3 q4.
+
+Vamos chamar esses cenarios 1 2 3 de OPTION 1 2 3. porque já chamanos de "cenários" as configurações de GGR
+
+[2026-03-19 — Prompt 2 (respostas às perguntas)]
+- Option 3 mecânica: "vamos com Waiver per Period, Fee Rampup e Accumulated GGR, o que acha?"
+- Eixo X: Quarter (Q1-Q4)
+
+[2026-03-19 — Prompt 3]
+a partir de agora, crie um arquivo TXT e sempre que eu digitar aqui um prompt, primeiro agregue esse meu prompt nesse arquivo TXT como um backup se você crashar.
+
+[2026-03-19 — Prompt 4]
+ajuste os containers de big numbers, estao descentralizados horizontalmente na versao web
+
+[2026-03-19 — Prompt 5]
+Crie um novo cenário 3, esse cenário deve prever 4 triggers de GGR acumulado. 25% em cada trigger, sem ter tempo fixo para acontecer, mas dentro do periodo de licença vigente (45meses)
+renomeie cada um dos cenários de acordo com o seu tipo.
+
+[2026-03-19 — Prompt 6]
+o Cenário 1, nao deve ser 5mi ao ano hardcoded, ele deve ser parametrizado de acordo com o parametro do total waiver, dividido em 25% em cada um dos 4 anos.
+
+[2026-03-19 — Prompt 7]
+o mini grafico do option 2 nao está alinhado como nos options 1 e 3.
+
+Na option 2 vamos mudar, ele deve iniciar a 0,25, subir até 1.0 no começo do segundo ano e permanecer assim até dar o target de waiver..
+
+[2026-03-19 — Prompt 8]
+no regua de fee padrao coloque os limites de 0 a 4
+
+[2026-03-19 — Prompt 9]
+crie parâmetros para config dos aspectos gerais de cada uma das 3 opções e agrupe o da option 3 que já temos nesse novo local. deixe ele ser "minimizado" e maximizado se clicarmos para alterar nos containers dos options. Então por exemplo:
+
+No option 1: selecionar a distribuição por ano em %, no option 2 a % de fee por quarter dos dois primeiros anos e o option 3 manter. Ou faça algo melhor que isso mas simples também.
+
+remova do comparativo final os parametros que nao fazem sentido, receita dia 1 todos vao ter, a opção 3 libera desconto/waiver após mas a plataforma tem receita desde o primeiro dia.
+
+remova o risco para plataforma e troque por atratividade p/plataforma
+
+[2026-03-19 — Prompt 10]
+no infografico inicial, vamos sair desse sistema hiper basico para algo mais profundo no nosso tema.
+
+Acho que o fluxo é explicar a logica de convencimento, algo como
+
+1) Grupo Operador com track record comprovado, 1.7Bi em depositos em 2025
+
+2) GGR mensal cresce gradualmente pela limitação de fluxo de caixa
+
+3) KPIs claros liberam incentivos de fluxo de caixa da PLataforma (zero risco, lucrativo)
+
+4) a operação cresce mais rapidamente com o incentivo e todos lucram mais
+
+ou melhore, sugira
+
+[2026-03-19 — Prompt 11]
+as legendas do infográfico os textos abaixo precisam estar alinhados. Talvez alinhar os textos verticalmente ao centro faça com que o texto colorido em baixo fique alinhado também.
+
+Os minigráficos das options desalinharam novamente.
+
+Os configuradores das options (parametros) podem estar logo abaixo dos primeiros containers que mencionam as options
+
+posicione a seção dos big numbers em um local mais apropriado, acho que ali em cima está desconexo com o fluxo
+
+[2026-03-19 — Prompt 12]
+o alinhamento dos textos do infografico ficou OK mas o texto em si está em formatação esquisita, revise por favor.
+
+Quanto ao configurador das options os textos precisam estar na mesma cor, o option 2 etá em azul e deveria ser amarelo
+
+O espaco vertical entre os ultimos gráficos e os big numbers está um pouco maior do que deveria, deveria seguri o mesmo espaçamento entre o primeiro e os outros graficos
+
+Refaça os "cenários salvos". O primeiro deve ser esse que estamos no setup default.
+
+O segundo mantém o waiver em 20, mas muda o crescimento para um cenario mais otimista
+
+O terceiro mantem em 20 tambem mas muda o crescimento para um cenario mais conservador.
+
+Coloque nomes adequados
+
+[2026-03-19 — Prompt 13]
+mude a ordem do infografico inicial, o incentivo vem antes da migração.
+
+Quando clicamos em um dos configuradores de option os 2 devem abrir.
+
+Alinhe na vertical os containers dos numeros de input dos configuradores de option, nesse momento so o 2 e 3 estao alinhados, o 1 está mais para cima
+
+os cenários salvos devem também salvar uma foto do que foi configurado nas opções.
+
+Traga uma mensagem de confirmação cada vez que salvar ou carregar um novo cenário.
+
+[2026-03-19 — Prompt 14]
+crie um seletor de idioma EN / BR para ingles e portugues do brasil, traduza todo o conteudo para ingles na versao EN, coloque uma bandeirinha de cada país como indicador alem da legenda EN/BR.
+
+[2026-03-19 — Prompt 15]
+crie um novo projeto no github e no vercel para subirmos
