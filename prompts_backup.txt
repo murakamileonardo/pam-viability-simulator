@@ -116,3 +116,6 @@ agora me diga, conseguiriamos fazer um botao para rodar um tutorial, imagino aqu
 OK agora as ultimas correções, lá embaixo no comparativo de cenários, pro gráfico em área, o interessante é mostrar a diferença de receita total pra plataforma (baseado no GGR acumulado, tirando o waiver), esse quesito "eficiencia fee" nao serve pra nada, o avaliação também não. Pode remover.
 
 Renomeia "Receita" para "Receita plataforma"
+
+[2026-03-20 — Prompt 18]
+agora so alguns textos. Tire as menções à "Licença federal", parece amador pra quem é endemico, aparece duas vezes uma no infográfico e outra no título na primeira secção
