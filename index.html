@@ -604,29 +604,27 @@ footer span { color: var(--accent-purple); font-weight: 600; }
 .info-scenario-card {
   border: 1px solid var(--border-subtle); border-radius: var(--radius-md);
   padding: 18px; background: var(--bg-elevated); position: relative; overflow: hidden;
-  display: flex; flex-direction: column; transition: opacity 0.3s, filter 0.3s;
+  display: flex; flex-direction: column;
 }
-.info-scenario-card.opt-hidden {
-  opacity: 0.25; filter: grayscale(1);
-}
-.opt-eye-btn {
-  position: absolute; top: 10px; right: 10px; z-index: 2;
+.info-scenario-card.opt-hidden { display: none; }
+.opt-hide-btn {
+  position: absolute; top: 8px; right: 8px; z-index: 2;
   background: none; border: none; cursor: pointer;
-  font-size: 16px; padding: 4px; line-height: 1;
-  color: var(--text-muted); transition: color 0.2s, transform 0.2s;
-  border-radius: 50%;
+  width: 20px; height: 20px; padding: 0; line-height: 20px; text-align: center;
+  font-size: 11px; font-family: var(--font-sans); font-weight: 500;
+  color: var(--text-disabled); transition: color 0.2s;
+  border-radius: 50%; opacity: 0.5;
 }
-.opt-eye-btn:hover { color: var(--text-primary); transform: scale(1.15); }
-.opt-hidden .opt-eye-btn { color: var(--text-disabled); }
+.opt-hide-btn:hover { color: var(--text-muted); opacity: 1; }
 .opt-show-all-btn {
   display: none; align-items: center; gap: 6px;
-  margin: 8px auto 0; padding: 6px 16px;
+  margin: 10px auto 0; padding: 6px 18px;
   background: var(--bg-elevated); border: 1px solid var(--border-default);
-  border-radius: var(--radius-pill); color: var(--accent-amber);
+  border-radius: var(--radius-pill); color: var(--text-muted);
   font-family: var(--font-sans); font-size: 11px; font-weight: 600;
   cursor: pointer; transition: all 0.2s;
 }
-.opt-show-all-btn:hover { background: rgba(252,185,0,0.1); border-color: var(--accent-amber); }
+.opt-show-all-btn:hover { background: rgba(255,255,255,0.04); border-color: var(--border-hover); color: var(--text-secondary); }
 .opt-show-all-btn.visible { display: inline-flex; }
 .info-scenario-card::before {
   content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
@@ -1015,7 +1013,7 @@ footer span { color: var(--accent-purple); font-weight: 600; }
       <div class="info-scenarios" id="info-options-cards">
         <!-- Populated dynamically -->
       </div>
-      <button class="opt-show-all-btn" id="opt-show-all" onclick="showAllOptions()">👁 <span data-i18n="showAllOptions">Mostrar todas as Options</span></button>
+      <button class="opt-show-all-btn" id="opt-show-all" onclick="showAllOptions()"><span data-i18n="showAllOptions">Restaurar todas as opções</span></button>
 
       <!-- Option configs: collapsible panels -->
       <div class="opt-configs-grid" style="margin-top:16px;">
@@ -1551,7 +1549,7 @@ const i18n = {
     quarters: '8 quarters',
     afterWaiver: 'Após Q8',
     // Option visibility
-    showAllOptions: 'Mostrar todas as Options',
+    showAllOptions: 'Restaurar todas as opções',
     // Tutorial
     tutStep: 'Passo',
     tutOf: 'de',
@@ -1789,7 +1787,7 @@ const i18n = {
     quarters: '8 quarters',
     afterWaiver: 'After Q8',
     // Option visibility
-    showAllOptions: 'Show all Options',
+    showAllOptions: 'Restore all options',
     // Tutorial
     tutStep: 'Step',
     tutOf: 'of',
@@ -2031,13 +2029,10 @@ function applyOptVisibility() {
   const keys = ['opt1','opt2','opt3'];
   const anyHidden = keys.some(k => !optVisible[k]);
 
-  // Option cards
+  // Option cards (fully hidden)
   keys.forEach(k => {
     const card = document.querySelector(`.info-scenario-card.${k}`);
     if (card) card.classList.toggle('opt-hidden', !optVisible[k]);
-    // Eye icon text
-    const eyeBtn = card?.querySelector('.opt-eye-btn');
-    if (eyeBtn) eyeBtn.textContent = optVisible[k] ? '👁' : '👁‍🗨';
   });
 
   // Config panels
@@ -2289,7 +2284,7 @@ function recalculate() {
   const maxRate = Math.max(...c2_qRates, 0.01);
   $('info-options-cards').innerHTML = `
     <div class="info-scenario-card opt1 ${optVisible.opt1?'':'opt-hidden'}">
-      <button class="opt-eye-btn" onclick="toggleOptVisibility('opt1')" title="Toggle Option 1">${optVisible.opt1?'👁':'👁‍🗨'}</button>
+      <button class="opt-hide-btn" onclick="toggleOptVisibility('opt1')" title="Ocultar">✕</button>
       <div class="info-scenario-tag">Option 1 — Waiver per Period</div>
       <div class="info-scenario-title">${T('infoOpt1Title')} (${c1_yearPcts.map(p=>Math.round(p*100)+'%').join('/')})</div>
       <div class="info-scenario-desc">R$${P.waiver}M: ${c1_yearCaps.map((c,i)=>'R$'+c.toFixed(0)+'M ('+(2026+i)+')').join(', ')}.</div>
@@ -2301,7 +2296,7 @@ function recalculate() {
       </div>
     </div>
     <div class="info-scenario-card opt2 ${optVisible.opt2?'':'opt-hidden'}">
-      <button class="opt-eye-btn" onclick="toggleOptVisibility('opt2')" title="Toggle Option 2">${optVisible.opt2?'👁':'👁‍🗨'}</button>
+      <button class="opt-hide-btn" onclick="toggleOptVisibility('opt2')" title="Ocultar">✕</button>
       <div class="info-scenario-tag">Option 2 — Fee Ramp-up</div>
       <div class="info-scenario-title">${c2_qRates[0]}% → ${c2_qRates[7]}% (${T('quarters')})</div>
       <div class="info-scenario-desc">${T('infoOpt2Desc').replace('{fee}', (P.fee*100).toFixed(1))}</div>
@@ -2313,7 +2308,7 @@ function recalculate() {
       </div>
     </div>
     <div class="info-scenario-card opt3 ${optVisible.opt3?'':'opt-hidden'}">
-      <button class="opt-eye-btn" onclick="toggleOptVisibility('opt3')" title="Toggle Option 3">${optVisible.opt3?'👁':'👁‍🗨'}</button>
+      <button class="opt-hide-btn" onclick="toggleOptVisibility('opt3')" title="Ocultar">✕</button>
       <div class="info-scenario-tag">Option 3 — Accumulated GGR</div>
       <div class="info-scenario-title">${T('infoOpt3Title')}</div>
       <div class="info-scenario-desc">${T('infoOpt3Desc').replace('{tranche}', c3_tranche.toFixed(0))}</div>
