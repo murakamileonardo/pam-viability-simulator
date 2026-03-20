@@ -119,3 +119,8 @@ Renomeia "Receita" para "Receita plataforma"
 
 [2026-03-20 — Prompt 18]
 agora so alguns textos. Tire as menções à "Licença federal", parece amador pra quem é endemico, aparece duas vezes uma no infográfico e outra no título na primeira secção
+
+[2026-03-20 — Prompt 19]
+agora adicione nos options um flag para ocultar uma ou mais options. Isso sera utilizado em uma reunião e talvez eu queira direcionar a reuniao para somente uma option.
+
+Acho que pode ser um olhinho de ocultar, e em algum lugar um botão para mostrar todos novamente. claro que se ocultamos, nao so o card mas também nos graficos etc precisamos ocultar

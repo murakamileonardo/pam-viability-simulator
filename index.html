@@ -604,8 +604,30 @@ footer span { color: var(--accent-purple); font-weight: 600; }
 .info-scenario-card {
   border: 1px solid var(--border-subtle); border-radius: var(--radius-md);
   padding: 18px; background: var(--bg-elevated); position: relative; overflow: hidden;
-  display: flex; flex-direction: column;
+  display: flex; flex-direction: column; transition: opacity 0.3s, filter 0.3s;
 }
+.info-scenario-card.opt-hidden {
+  opacity: 0.25; filter: grayscale(1);
+}
+.opt-eye-btn {
+  position: absolute; top: 10px; right: 10px; z-index: 2;
+  background: none; border: none; cursor: pointer;
+  font-size: 16px; padding: 4px; line-height: 1;
+  color: var(--text-muted); transition: color 0.2s, transform 0.2s;
+  border-radius: 50%;
+}
+.opt-eye-btn:hover { color: var(--text-primary); transform: scale(1.15); }
+.opt-hidden .opt-eye-btn { color: var(--text-disabled); }
+.opt-show-all-btn {
+  display: none; align-items: center; gap: 6px;
+  margin: 8px auto 0; padding: 6px 16px;
+  background: var(--bg-elevated); border: 1px solid var(--border-default);
+  border-radius: var(--radius-pill); color: var(--accent-amber);
+  font-family: var(--font-sans); font-size: 11px; font-weight: 600;
+  cursor: pointer; transition: all 0.2s;
+}
+.opt-show-all-btn:hover { background: rgba(252,185,0,0.1); border-color: var(--accent-amber); }
+.opt-show-all-btn.visible { display: inline-flex; }
 .info-scenario-card::before {
   content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
 }
@@ -993,6 +1015,7 @@ footer span { color: var(--accent-purple); font-weight: 600; }
       <div class="info-scenarios" id="info-options-cards">
         <!-- Populated dynamically -->
       </div>
+      <button class="opt-show-all-btn" id="opt-show-all" onclick="showAllOptions()">👁 <span data-i18n="showAllOptions">Mostrar todas as Options</span></button>
 
       <!-- Option configs: collapsible panels -->
       <div class="opt-configs-grid" style="margin-top:16px;">
@@ -1527,6 +1550,8 @@ const i18n = {
     // Quarters
     quarters: '8 quarters',
     afterWaiver: 'Após Q8',
+    // Option visibility
+    showAllOptions: 'Mostrar todas as Options',
     // Tutorial
     tutStep: 'Passo',
     tutOf: 'de',
@@ -1763,6 +1788,8 @@ const i18n = {
     // Quarters
     quarters: '8 quarters',
     afterWaiver: 'After Q8',
+    // Option visibility
+    showAllOptions: 'Show all Options',
     // Tutorial
     tutStep: 'Step',
     tutOf: 'of',
@@ -1987,6 +2014,83 @@ function switchTab(tab, btn) {
 }
 
 // ===== CORE: RECALCULATE =====
+// ===== OPTION VISIBILITY =====
+const optVisible = { opt1: true, opt2: true, opt3: true };
+
+function toggleOptVisibility(optKey) {
+  optVisible[optKey] = !optVisible[optKey];
+  applyOptVisibility();
+}
+
+function showAllOptions() {
+  optVisible.opt1 = true; optVisible.opt2 = true; optVisible.opt3 = true;
+  applyOptVisibility();
+}
+
+function applyOptVisibility() {
+  const keys = ['opt1','opt2','opt3'];
+  const anyHidden = keys.some(k => !optVisible[k]);
+
+  // Option cards
+  keys.forEach(k => {
+    const card = document.querySelector(`.info-scenario-card.${k}`);
+    if (card) card.classList.toggle('opt-hidden', !optVisible[k]);
+    // Eye icon text
+    const eyeBtn = card?.querySelector('.opt-eye-btn');
+    if (eyeBtn) eyeBtn.textContent = optVisible[k] ? '👁' : '👁‍🗨';
+  });
+
+  // Config panels
+  ['opt1-config','opt2-config','opt3-config'].forEach((id, i) => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = optVisible[keys[i]] ? '' : 'none';
+  });
+
+  // Chart datasets (Fee: 0=opt1, 1=opt2, 2=opt3; Waiver: same + 3=meta)
+  [chartFee, chartWaiver].forEach(chart => {
+    keys.forEach((k, i) => {
+      chart.data.datasets[i].hidden = !optVisible[k];
+    });
+    chart.update('none');
+  });
+
+  // Tab buttons (skip first = comparativo)
+  const tabBtns = document.querySelectorAll('.tab-btn');
+  if (tabBtns.length >= 4) {
+    tabBtns[1].style.display = optVisible.opt1 ? '' : 'none';
+    tabBtns[2].style.display = optVisible.opt2 ? '' : 'none';
+    tabBtns[3].style.display = optVisible.opt3 ? '' : 'none';
+  }
+
+  // Comparison table — hide columns (col index: 0=metric, 1=opt1, 2=opt2, 3=opt3)
+  document.querySelectorAll('#tbl-comp tr').forEach(row => {
+    const cells = row.querySelectorAll('td, th');
+    if (cells.length >= 4) {
+      cells[1].style.display = optVisible.opt1 ? '' : 'none';
+      cells[2].style.display = optVisible.opt2 ? '' : 'none';
+      cells[3].style.display = optVisible.opt3 ? '' : 'none';
+    }
+  });
+
+  // Progress bars container (3 direct children of .stats-3col)
+  const pb = document.getElementById('progress-bars');
+  if (pb) {
+    const grid = pb.querySelector('.stats-3col');
+    if (grid) {
+      const cards = grid.children;
+      if (cards.length >= 3) {
+        cards[0].style.display = optVisible.opt1 ? '' : 'none';
+        cards[1].style.display = optVisible.opt2 ? '' : 'none';
+        cards[2].style.display = optVisible.opt3 ? '' : 'none';
+      }
+    }
+  }
+
+  // Show All button
+  const showAllBtn = document.getElementById('opt-show-all');
+  if (showAllBtn) showAllBtn.classList.toggle('visible', anyHidden);
+}
+
 function recalculate() {
   const P = {
     ggrIni:  parseFloat(sliders.ggrIni.el.value),
@@ -2184,7 +2288,8 @@ function recalculate() {
   const maxPct = Math.max(...c1_yearPcts, 0.01);
   const maxRate = Math.max(...c2_qRates, 0.01);
   $('info-options-cards').innerHTML = `
-    <div class="info-scenario-card opt1">
+    <div class="info-scenario-card opt1 ${optVisible.opt1?'':'opt-hidden'}">
+      <button class="opt-eye-btn" onclick="toggleOptVisibility('opt1')" title="Toggle Option 1">${optVisible.opt1?'👁':'👁‍🗨'}</button>
       <div class="info-scenario-tag">Option 1 — Waiver per Period</div>
       <div class="info-scenario-title">${T('infoOpt1Title')} (${c1_yearPcts.map(p=>Math.round(p*100)+'%').join('/')})</div>
       <div class="info-scenario-desc">R$${P.waiver}M: ${c1_yearCaps.map((c,i)=>'R$'+c.toFixed(0)+'M ('+(2026+i)+')').join(', ')}.</div>
@@ -2195,7 +2300,8 @@ function recalculate() {
         ${c1_yearCaps.map((c,i) => `<span>${2026+i}: R$${c.toFixed(0)}M</span>`).join('')}
       </div>
     </div>
-    <div class="info-scenario-card opt2">
+    <div class="info-scenario-card opt2 ${optVisible.opt2?'':'opt-hidden'}">
+      <button class="opt-eye-btn" onclick="toggleOptVisibility('opt2')" title="Toggle Option 2">${optVisible.opt2?'👁':'👁‍🗨'}</button>
       <div class="info-scenario-tag">Option 2 — Fee Ramp-up</div>
       <div class="info-scenario-title">${c2_qRates[0]}% → ${c2_qRates[7]}% (${T('quarters')})</div>
       <div class="info-scenario-desc">${T('infoOpt2Desc').replace('{fee}', (P.fee*100).toFixed(1))}</div>
@@ -2206,7 +2312,8 @@ function recalculate() {
         ${c2_qRates.slice(0,4).map((r,i) => `<span>Q${i+1}: ${r}%</span>`).join('')}
       </div>
     </div>
-    <div class="info-scenario-card opt3">
+    <div class="info-scenario-card opt3 ${optVisible.opt3?'':'opt-hidden'}">
+      <button class="opt-eye-btn" onclick="toggleOptVisibility('opt3')" title="Toggle Option 3">${optVisible.opt3?'👁':'👁‍🗨'}</button>
       <div class="info-scenario-tag">Option 3 — Accumulated GGR</div>
       <div class="info-scenario-title">${T('infoOpt3Title')}</div>
       <div class="info-scenario-desc">${T('infoOpt3Desc').replace('{tranche}', c3_tranche.toFixed(0))}</div>
@@ -2379,6 +2486,9 @@ function recalculate() {
   chartWaiver.data.datasets[3].data = Array(months.length).fill(P.waiver);
   chartWaiver.options.scales.y.max = Math.max(P.waiver * 1.3, 5);
   chartWaiver.update('none');
+
+  // Re-apply option visibility after re-rendering
+  applyOptVisibility();
 }
 
 // ===== SCENARIOS STORAGE =====
