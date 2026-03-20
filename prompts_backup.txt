@@ -108,3 +108,6 @@ crie um seletor de idioma EN / BR para ingles e portugues do brasil, traduza tod
 
 [2026-03-19 — Prompt 15]
 crie um novo projeto no github e no vercel para subirmos
+
+[2026-03-19 — Prompt 16]
+agora me diga, conseguiriamos fazer um botao para rodar um tutorial, imagino aqueles tutoriais onde a pagina inteira esta escrita e em destaque somente o que vamos explicar, abre uma janelinha com uma explicação: passo 1, passo 2... etc, de como utilizar a ferramenta e explicando o que é cada item.

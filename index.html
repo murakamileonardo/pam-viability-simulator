@@ -728,6 +728,82 @@ footer span { color: var(--accent-purple); font-weight: 600; }
 }
 .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
 
+/* TUTORIAL WALKTHROUGH */
+.tutorial-start-btn {
+  display: flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px; border-radius: 50%;
+  background: var(--bg-elevated); border: 1px solid var(--border-default);
+  color: var(--accent-amber); font-size: 14px; font-weight: 700;
+  cursor: pointer; transition: all 0.25s; margin-left: 10px; flex-shrink: 0;
+  font-family: var(--font-sans);
+}
+.tutorial-start-btn:hover {
+  background: rgba(252,185,0,0.15); border-color: var(--accent-amber);
+  transform: scale(1.1);
+}
+.tutorial-highlight {
+  position: fixed; z-index: 2001;
+  box-shadow: 0 0 0 9999px rgba(0,0,0,0.78);
+  border-radius: var(--radius-md);
+  transition: top 0.45s ease, left 0.45s ease, width 0.45s ease, height 0.45s ease;
+  pointer-events: none;
+  display: none;
+}
+.tutorial-highlight.active { display: block; }
+.tutorial-tooltip {
+  position: fixed; z-index: 2002;
+  background: var(--bg-surface); border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg); padding: 24px;
+  width: 360px; max-width: 90vw;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+  display: none; animation: fadeIn 0.3s ease;
+}
+.tutorial-tooltip.active { display: block; }
+.tutorial-step {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.12em; color: var(--accent-amber); margin-bottom: 6px;
+}
+.tutorial-title {
+  font-size: 16px; font-weight: 700; color: var(--text-primary);
+  margin-bottom: 8px;
+}
+.tutorial-desc {
+  font-size: 13px; color: var(--text-muted); line-height: 1.6;
+  margin-bottom: 18px;
+}
+.tutorial-progress {
+  display: flex; gap: 4px; margin-bottom: 16px;
+}
+.tutorial-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--bg-muted); transition: background 0.3s;
+}
+.tutorial-dot.done { background: var(--accent-amber); }
+.tutorial-dot.current { background: var(--accent-amber); box-shadow: 0 0 6px rgba(252,185,0,0.5); }
+.tutorial-nav {
+  display: flex; justify-content: space-between; align-items: center; gap: 10px;
+}
+.tutorial-nav-btn {
+  padding: 8px 18px; border-radius: var(--radius-pill);
+  font-family: var(--font-sans); font-size: 12px; font-weight: 600;
+  cursor: pointer; transition: all 0.2s; border: none;
+}
+.tutorial-nav-btn.next {
+  background: var(--gradient-cta); color: #fff;
+  box-shadow: var(--shadow-glow);
+}
+.tutorial-nav-btn.next:hover { transform: translateY(-1px); }
+.tutorial-nav-btn.prev {
+  background: var(--bg-elevated); color: var(--text-muted);
+  border: 1px solid var(--border-default);
+}
+.tutorial-nav-btn.prev:hover { color: var(--text-primary); }
+.tutorial-nav-btn.skip {
+  background: none; color: var(--text-disabled); border: none;
+  font-size: 11px; padding: 8px 12px;
+}
+.tutorial-nav-btn.skip:hover { color: var(--text-muted); }
+
 </style>
 </head>
 <body>
@@ -747,6 +823,7 @@ footer span { color: var(--accent-purple); font-weight: 600; }
         <div class="lang-option" data-lang="en" onclick="setLang('en')">&#x1F1FA;&#x1F1F8; EN</div>
       </div>
     </li>
+    <li><button class="tutorial-start-btn" onclick="startTutorial()" title="Tutorial">?</button></li>
   </ul>
 </nav>
 
@@ -1110,6 +1187,22 @@ footer span { color: var(--accent-purple); font-weight: 600; }
 
 <div class="toast" id="toast"></div>
 
+<!-- Tutorial Walkthrough -->
+<div class="tutorial-highlight" id="tutorial-highlight"></div>
+<div class="tutorial-tooltip" id="tutorial-tooltip">
+  <div class="tutorial-step" id="tutorial-step-label"></div>
+  <div class="tutorial-title" id="tutorial-title"></div>
+  <div class="tutorial-desc" id="tutorial-desc"></div>
+  <div class="tutorial-progress" id="tutorial-progress"></div>
+  <div class="tutorial-nav">
+    <button class="tutorial-nav-btn skip" onclick="endTutorial()" id="tutorial-skip-btn"></button>
+    <div style="display:flex;gap:8px;">
+      <button class="tutorial-nav-btn prev" onclick="prevStep()" id="tutorial-prev-btn"></button>
+      <button class="tutorial-nav-btn next" onclick="nextStep()" id="tutorial-next-btn"></button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ===== I18N SYSTEM =====
 let currentLang = localStorage.getItem('pam_lang') || 'br';
@@ -1321,6 +1414,37 @@ const i18n = {
     // Quarters
     quarters: '8 quarters',
     afterWaiver: 'Após Q8',
+    // Tutorial
+    tutStep: 'Passo',
+    tutOf: 'de',
+    tutNext: 'Próximo →',
+    tutPrev: '← Anterior',
+    tutSkip: 'Pular tutorial',
+    tutFinish: 'Concluir',
+    tut1Title: 'A Lógica do Incentivo',
+    tut1Desc: 'Estes são os 4 pilares que sustentam a proposta de migração. Mostram por que o deal faz sentido para ambas as partes: credibilidade do operador, necessidade de incentivo, segurança para a plataforma e resultado win-win.',
+    tut2Title: '3 Modelos de Negociação',
+    tut2Desc: 'Cada card representa uma opção de estruturação do waiver. Option 1 distribui por ano, Option 2 usa fee progressivo, e Option 3 amarra a metas de GGR acumulado.',
+    tut3Title: 'Parâmetros por Option',
+    tut3Desc: 'Clique para expandir e configurar cada modelo individualmente. Ajuste a distribuição anual (Opt 1), fee por quarter (Opt 2) ou metas de GGR (Opt 3).',
+    tut4Title: 'Waiver Total',
+    tut4Desc: 'Este é o valor total do desconto proposto à plataforma. É o parâmetro central da negociação — todo o simulador gira em torno deste número.',
+    tut5Title: 'Premissas de GGR e Fee',
+    tut5Desc: 'Configure o GGR inicial, a meta do ano 1, o fee % da plataforma e a taxa de crescimento anual para os anos 2, 3 e 4. Tudo recalcula em tempo real.',
+    tut6Title: 'Projeção de GGR',
+    tut6Desc: 'Gráfico de evolução mensal do GGR ao longo de 45 meses. A curva mostra o ramp-up exponencial no ano 1 e o crescimento composto nos anos seguintes.',
+    tut7Title: 'Fee & Waiver Acumulado',
+    tut7Desc: 'À esquerda, o fee acumulado que a plataforma recebe em cada option. À direita, quanto do waiver foi consumido vs. a meta total. Compare visualmente os 3 modelos.',
+    tut8Title: 'Números-Chave',
+    tut8Desc: 'Resumo dos KPIs: GGR total nos 45 meses, fee potencial bruto, waiver proposto como % do fee, e em quantos meses a plataforma recupera o waiver concedido.',
+    tut9Title: 'Comparativo de Options',
+    tut9Desc: 'Tabela lado-a-lado comparando os 3 modelos em todas as métricas: mecanismo, waiver usado, receita da plataforma, atratividade e ponto de esgotamento do waiver.',
+    tut10Title: 'Salvar Cenários',
+    tut10Desc: 'Salve qualquer configuração com nome e avaliação. Isso permite comparar depois diferentes premissas e encontrar o melhor cenário para a negociação.',
+    tut11Title: 'Cenários Salvos',
+    tut11Desc: 'Aqui ficam todos os cenários salvos. Você pode carregar um para restaurar os parâmetros, comparar vários lado a lado, ou excluir os que não precisa mais.',
+    tut12Title: 'Idioma',
+    tut12Desc: 'Alterne entre Português e Inglês. A troca é instantânea e aplica a tradução em toda a interface, gráficos e textos.',
   },
   en: {
     // Page title
@@ -1528,6 +1652,37 @@ const i18n = {
     // Quarters
     quarters: '8 quarters',
     afterWaiver: 'After Q8',
+    // Tutorial
+    tutStep: 'Step',
+    tutOf: 'of',
+    tutNext: 'Next →',
+    tutPrev: '← Back',
+    tutSkip: 'Skip tutorial',
+    tutFinish: 'Finish',
+    tut1Title: 'The Incentive Logic',
+    tut1Desc: 'These are the 4 pillars supporting the migration proposal. They show why this deal makes sense for both parties: operator credibility, incentive need, platform safety, and win-win outcome.',
+    tut2Title: '3 Negotiation Models',
+    tut2Desc: 'Each card represents a waiver structuring option. Option 1 distributes by year, Option 2 uses progressive fee, and Option 3 ties to accumulated GGR milestones.',
+    tut3Title: 'Option Parameters',
+    tut3Desc: 'Click to expand and configure each model individually. Adjust the annual distribution (Opt 1), fee per quarter (Opt 2), or GGR milestones (Opt 3).',
+    tut4Title: 'Total Waiver',
+    tut4Desc: 'This is the total discount proposed to the platform. It\'s the central negotiation parameter — the entire simulator revolves around this number.',
+    tut5Title: 'GGR & Fee Assumptions',
+    tut5Desc: 'Configure initial GGR, Year 1 target, platform fee %, and annual growth rates for Years 2, 3 and 4. Everything recalculates in real-time.',
+    tut6Title: 'GGR Projection',
+    tut6Desc: 'Monthly GGR evolution chart over 45 months. The curve shows exponential ramp-up in Year 1 and compound growth in subsequent years.',
+    tut7Title: 'Accumulated Fee & Waiver',
+    tut7Desc: 'On the left, accumulated fee the platform receives per option. On the right, how much waiver was consumed vs. the total target. Visually compare all 3 models.',
+    tut8Title: 'Key Metrics',
+    tut8Desc: 'KPI summary: total GGR over 45 months, gross potential fee, proposed waiver as % of fee, and how many months until the platform recovers the granted waiver.',
+    tut9Title: 'Options Comparison',
+    tut9Desc: 'Side-by-side table comparing all 3 models across every metric: mechanism, waiver used, platform revenue, attractiveness, and waiver exhaustion point.',
+    tut10Title: 'Save Scenarios',
+    tut10Desc: 'Save any configuration with a name and rating. This allows you to later compare different assumptions and find the best scenario for negotiation.',
+    tut11Title: 'Saved Scenarios',
+    tut11Desc: 'All saved scenarios appear here. You can load one to restore parameters, compare several side by side, or delete those you no longer need.',
+    tut12Title: 'Language',
+    tut12Desc: 'Switch between Portuguese and English. The switch is instant and applies translation across the entire interface, charts and texts.',
   }
 };
 
@@ -2437,6 +2592,145 @@ function updateComparison() {
     }
   });
 }
+
+// ===== TUTORIAL WALKTHROUGH =====
+const tutorialSteps = [
+  { target: '.info-flow', titleKey: 'tut1Title', descKey: 'tut1Desc' },
+  { target: '#info-options-cards', titleKey: 'tut2Title', descKey: 'tut2Desc' },
+  { target: '.opt-configs-grid', titleKey: 'tut3Title', descKey: 'tut3Desc' },
+  { target: '.sim-waiver-row', titleKey: 'tut4Title', descKey: 'tut4Desc' },
+  { target: '.sim-grid-2col', titleKey: 'tut5Title', descKey: 'tut5Desc' },
+  { target: '#chartGGR', titleKey: 'tut6Title', descKey: 'tut6Desc', parentSelector: '.chart-container' },
+  { target: '#projecao .chart-container:nth-child(2)', titleKey: 'tut7Title', descKey: 'tut7Desc', useParentGrid: true },
+  { target: '.kpi-row', titleKey: 'tut8Title', descKey: 'tut8Desc' },
+  { target: '#tab-comparativo', titleKey: 'tut9Title', descKey: 'tut9Desc' },
+  { target: '.save-panel', titleKey: 'tut10Title', descKey: 'tut10Desc' },
+  { target: '#scenarios-list', titleKey: 'tut11Title', descKey: 'tut11Desc' },
+  { target: '#lang-toggle', titleKey: 'tut12Title', descKey: 'tut12Desc' },
+];
+
+let tutCurrentStep = 0;
+let tutActive = false;
+
+function startTutorial() {
+  tutCurrentStep = 0;
+  tutActive = true;
+  $('tutorial-highlight').classList.add('active');
+  $('tutorial-tooltip').classList.add('active');
+  goToStep(0);
+}
+
+function endTutorial() {
+  tutActive = false;
+  $('tutorial-highlight').classList.remove('active');
+  $('tutorial-tooltip').classList.remove('active');
+  localStorage.setItem('pam_tutorial_seen', '1');
+}
+
+function nextStep() {
+  if (tutCurrentStep < tutorialSteps.length - 1) goToStep(tutCurrentStep + 1);
+  else endTutorial();
+}
+
+function prevStep() {
+  if (tutCurrentStep > 0) goToStep(tutCurrentStep - 1);
+}
+
+function goToStep(n) {
+  tutCurrentStep = n;
+  const step = tutorialSteps[n];
+  let targetEl;
+
+  if (step.useParentGrid) {
+    // For the 2-chart grid, target the parent div containing both
+    const containers = document.querySelectorAll('#projecao .chart-container');
+    if (containers.length >= 3) {
+      targetEl = containers[1].parentElement; // the grid div
+    }
+  } else if (step.parentSelector) {
+    const inner = document.querySelector(step.target);
+    targetEl = inner ? inner.closest(step.parentSelector) : null;
+  } else {
+    targetEl = document.querySelector(step.target);
+  }
+
+  if (!targetEl) { nextStep(); return; }
+
+  // Scroll into view
+  targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+  // Wait for scroll, then position
+  setTimeout(() => {
+    const rect = targetEl.getBoundingClientRect();
+    const pad = 8;
+    const hl = $('tutorial-highlight');
+    hl.style.top = (rect.top - pad) + 'px';
+    hl.style.left = (rect.left - pad) + 'px';
+    hl.style.width = (rect.width + pad * 2) + 'px';
+    hl.style.height = (rect.height + pad * 2) + 'px';
+
+    // Update tooltip content
+    $('tutorial-step-label').textContent = `${T('tutStep')} ${n + 1} ${T('tutOf')} ${tutorialSteps.length}`;
+    $('tutorial-title').textContent = T(step.titleKey);
+    $('tutorial-desc').textContent = T(step.descKey);
+
+    // Progress dots
+    $('tutorial-progress').innerHTML = tutorialSteps.map((_, i) =>
+      `<div class="tutorial-dot ${i < n ? 'done' : ''} ${i === n ? 'current' : ''}"></div>`
+    ).join('');
+
+    // Nav buttons
+    $('tutorial-prev-btn').textContent = T('tutPrev');
+    $('tutorial-prev-btn').style.display = n > 0 ? '' : 'none';
+    $('tutorial-next-btn').textContent = n < tutorialSteps.length - 1 ? T('tutNext') : T('tutFinish');
+    $('tutorial-skip-btn').textContent = T('tutSkip');
+    $('tutorial-skip-btn').style.display = n < tutorialSteps.length - 1 ? '' : 'none';
+
+    // Position tooltip
+    positionTooltip(rect);
+  }, 450);
+}
+
+function positionTooltip(rect) {
+  const tt = $('tutorial-tooltip');
+  const ttW = 360;
+  const gap = 16;
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+
+  let top, left;
+
+  // Prefer below
+  if (rect.bottom + gap + 200 < vh) {
+    top = rect.bottom + gap;
+    left = Math.max(16, Math.min(rect.left, vw - ttW - 16));
+  }
+  // Try above
+  else if (rect.top - gap - 200 > 0) {
+    top = rect.top - gap - 200;
+    left = Math.max(16, Math.min(rect.left, vw - ttW - 16));
+  }
+  // Fall back to right side
+  else {
+    top = Math.max(80, rect.top);
+    left = rect.right + gap;
+    if (left + ttW > vw) left = rect.left - ttW - gap;
+    if (left < 16) left = 16;
+  }
+
+  tt.style.top = top + 'px';
+  tt.style.left = left + 'px';
+}
+
+// ESC to close tutorial
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && tutActive) endTutorial();
+});
+
+// Click on overlay (outside spotlight) closes tutorial
+$('tutorial-highlight').addEventListener('click', () => {
+  if (tutActive) endTutorial();
+});
 
 // Seed default scenarios if none exist
 function seedDefaults() {
