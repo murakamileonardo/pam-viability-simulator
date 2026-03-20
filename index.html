@@ -1114,7 +1114,7 @@ footer span { color: var(--accent-purple); font-weight: 600; }
             <div class="sim-range-labels"><span>1</span><span>20</span></div>
           </div>
           <div class="sim-input-group">
-            <div class="sim-label"><span data-i18n="lblGgrMeta">GGR Meta Ano 1 (R$M/mês)</span><span class="sim-val" id="lbl-ggrMeta">50</span></div>
+            <div class="sim-label"><span data-i18n="lblGgrMeta">GGR Meta Dez/26 (R$M/mês)</span><span class="sim-val" id="lbl-ggrMeta">50</span></div>
             <input type="range" class="sim-slider" id="sl-ggrMeta" min="10" max="150" step="1" value="50">
             <div class="sim-range-labels"><span>10</span><span>150</span></div>
           </div>
@@ -1394,7 +1394,7 @@ const i18n = {
     simSub: 'Ajuste os valores e todas as options recalculam automaticamente.',
     lblWaiverTotal: 'Waiver Total (R$M)',
     lblGgrIni: 'GGR Inicial (R$M/mês)',
-    lblGgrMeta: 'GGR Meta Ano 1 (R$M/mês)',
+    lblGgrMeta: 'GGR Meta Dez/26 (R$M/mês)',
     lblFee: 'Fee Padrão PAM (%)',
     lblGrowth: 'Crescimento Anual (%)',
     lblGrowY2: 'Ano 2',
@@ -1526,7 +1526,7 @@ const i18n = {
     radarPlatformRevenue: 'Receita Plataforma',
     // Compare table
     cmpGgrInitial: 'GGR Inicial',
-    cmpGgrGoalY1: 'GGR Meta Ano 1',
+    cmpGgrGoalY1: 'GGR Meta Dez/26',
     cmpGrowthA234: 'Crescimento A2/A3/A4',
     cmpFeePAM: 'Fee PAM',
     cmpRevenueOpt1Table: 'Receita Plataforma Opt 1',
@@ -1632,7 +1632,7 @@ const i18n = {
     simSub: 'Adjust the values and all options recalculate automatically.',
     lblWaiverTotal: 'Total Waiver (R$M)',
     lblGgrIni: 'Initial GGR (R$M/month)',
-    lblGgrMeta: 'GGR Goal Year 1 (R$M/month)',
+    lblGgrMeta: 'GGR Goal Dec/26 (R$M/month)',
     lblFee: 'Standard PAM Fee (%)',
     lblGrowth: 'Annual Growth (%)',
     lblGrowY2: 'Year 2',
@@ -1764,7 +1764,7 @@ const i18n = {
     radarPlatformRevenue: 'Platform Revenue',
     // Compare table
     cmpGgrInitial: 'Initial GGR',
-    cmpGgrGoalY1: 'GGR Goal Year 1',
+    cmpGgrGoalY1: 'GGR Goal Dec/26',
     cmpGrowthA234: 'Growth Y2/Y3/Y4',
     cmpFeePAM: 'PAM Fee',
     cmpRevenueOpt1Table: 'Platform Revenue Opt 1',
@@ -1946,18 +1946,24 @@ function updateOpt1Sum() {
 
 // ===== QUARTER LABELS HELPER =====
 function buildQuarterLabels(months) {
-  // Map each month string (e.g. 'Mar/26') to its quarter label
   const monthToQ = { 'Jan': 'Q1', 'Fev': 'Q1', 'Mar': 'Q1', 'Abr': 'Q2', 'Mai': 'Q2', 'Jun': 'Q2',
                      'Jul': 'Q3', 'Ago': 'Q3', 'Set': 'Q3', 'Out': 'Q4', 'Nov': 'Q4', 'Dez': 'Q4' };
-  // For year 1 starting Mar/26: Mar=Q1, Abr-Jun=Q2, Jul-Set=Q3, Out-Dez=Q4
-  // Actually Q1=Jan-Mar, Q2=Apr-Jun, Q3=Jul-Sep, Q4=Oct-Dec (calendar quarters)
+  // First pass: find quarter boundaries
+  const raw = months.map(m => { const [mon, yr] = m.split('/'); return monthToQ[mon] + '/' + yr; });
+  // Count months per quarter
+  const qCounts = {};
+  raw.forEach(q => { qCounts[q] = (qCounts[q] || 0) + 1; });
+  // Build labels: show quarter label at first occurrence, skip if quarter has only 1 month (avoids overlap)
   const labels = [];
   let lastQ = '';
-  months.forEach(m => {
-    const [mon, yr] = m.split('/');
-    const q = monthToQ[mon] + '/' + yr;
+  raw.forEach((q, i) => {
     if (q !== lastQ) {
-      labels.push(q);
+      // Skip quarters with only 1 month to prevent label overlap
+      if (qCounts[q] <= 1) {
+        labels.push('');
+      } else {
+        labels.push(q);
+      }
       lastQ = q;
     } else {
       labels.push('');

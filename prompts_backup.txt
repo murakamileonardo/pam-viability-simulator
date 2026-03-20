@@ -130,3 +130,8 @@ nao era isso, eu quero que o proprio card também seja completamente ocultado. T
 
 [2026-03-20 — Prompt 21]
 ao ocultar a option, centralize os cards automaticamente no container.
+
+[2026-03-20 — Prompt 22]
+existe um problema no calculo do option 1, considere que o parametro GGR Meta ano 1 na verdade significa o crescimento até dezembro deste ano., ajuste a rampa de ggr acho que está errada.
+
+Também verifique o label do eixo X do primeiro grafico de GGR, a legenda no modo web/pc está sobrepondo a outra
